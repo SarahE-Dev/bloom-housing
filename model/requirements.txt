@@ -6,3 +6,6 @@ xgboost
 pandas
 scikit-learn
 requests
+joblib
+matplotlib
+imbalanced-learn
