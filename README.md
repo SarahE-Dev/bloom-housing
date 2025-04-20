@@ -1,12 +1,3 @@
-Thank you for clarifying that you meant the original Bloom Affordable Housing Platform README. I’ll update this README to include a dedicated section on setting up and running the unhoused risk prediction model locally as a standalone component, incorporating all critical details from the `model/` README you provided for the Housing Risk Prediction Microservice. The updated README will:
-- Preserve every important section and detail from the original Bloom README (e.g., Overview, Structure, Getting Started, Starting Locally, Bloom UIC Development, Contributing).
-- Add a comprehensive subsection under “Starting Locally” for the unhoused risk prediction model, detailing how to set it up and run it independently using the Flask-based microservice described in the `model/` README.
-- Include all key elements from the `model/` README, such as technologies (Python, Flask, XGBoost, Docker, Kubernetes), folder structure, setup steps, API details, testing instructions, Docker and Kubernetes options, and troubleshooting tips.
-- Align with prior conversations (e.g., features like income and household size from April 8, 2025, and Flask integration from April 10, 2025) for consistency.
-
-Below is the updated Bloom Affordable Housing Platform README, ensuring all original content is retained and the new model instructions are seamlessly integrated.
-
-
 # Bloom Affordable Housing Platform
 
 Bloom is [Exygy](https://www.exygy.com/)’s affordable housing platform. Bloom's goal is to be a single entry point for affordable housing seekers and application management for developers. You can read more about the platform on [bloomhousing.com](https://bloomhousing.com/).
