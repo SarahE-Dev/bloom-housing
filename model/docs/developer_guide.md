@@ -8,24 +8,25 @@ This guide provides key information for developers contributing to the `bloom-ho
 
 ```
 model/
-├── app/
-│   ├── main.py              # Flask app
-│   └── model.pkl            # Trained model
-├── assets/                  # Visual assets for documentation
-│   ├── browser-console.png
-│   ├── microservice-flow.png
-│   └── test-console.png
-├── docs/                    # Developer documentation
-│   └── developer_guide.md
-├── utils/                   # Scripts for training and testing
-│   ├── test_prediction.py
-│   └── train_model.py
-├── .gitignore               # Git exclusions
-├── deployment.yaml          # K8s deployment config
-├── Dockerfile               # Docker container setup
-├── README.md                # Project overview & usage
-├── requirements.txt         # Python dependencies
-└── service.yaml             # K8s service config
+├── app/                                 # Core Flask app code and serialized model
+│   ├── main.py                          # Defines the /predict endpoint and loads model
+│   └── model.pkl                        # Serialized XGBoost model for predictions
+├── assets/                              # Visual assets for documentation and system diagrams
+│   ├── browser-console.png              # Screenshot showing prediction in browser console
+│   ├── microservice-flow.png            # Diagram of end-to-end system flow
+│   ├── system_design_diagram_4_20_25.png # Architecture/system design visualization
+│   └── test-console.png                 # Screenshot of test_prediction.py script output
+├── docs/                                # Project documentation
+│   └── developer_guide.md               # Guide for contributors and developers
+├── utils/                               # Helper scripts for model training and testing
+│   ├── test_prediction.py               # Script to send test data to /predict endpoint
+│   └── train_model.py                   # Generates mock data and trains the XGBoost model
+├── .gitignore                           # Files/folders to exclude from version control
+├── deployment.yaml                      # Kubernetes deployment configuration for the microservice
+├── Dockerfile                           # Docker build config for containerizing the Flask service
+├── README.md                            # Overview, setup, and usage instructions
+├── requirements.txt                     # List of Python package dependencies
+└── service.yaml                         # Kubernetes service configuration to expose the app
 ```
 
 ---
