@@ -1,0 +1,12 @@
+# Force LF for all text files
+* text=auto eol=lf
+# Ensure specific file types use LF
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+# Binary files (no line ending conversion)
+*.png binary
+*.jpg binary

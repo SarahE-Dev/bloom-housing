@@ -11,7 +11,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "dev": "NODE_OPTIONS='--inspect=9231' next -p ${NEXTJS_PORT:-3001}",
+    "dev": "next -p 3001",
     "build": "next build",
     "test": "concurrently \"yarn dev\" \"cypress open\"",
     "test:unit": "jest -w 1",
@@ -35,7 +35,7 @@
     "@heroicons/react": "^2.1.1",
     "@mapbox/mapbox-sdk": "^0.13.0",
     "ag-grid-community": "^26.0.0",
-    "axios": "^0.28.0",
+    "axios": "^1.8.4",
     "axios-cookiejar-support": "4.0.6",
     "clone-deep": "^4.0.1",
     "dayjs": "^1.10.7",
