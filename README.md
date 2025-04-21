@@ -139,19 +139,25 @@ The `model/` directory contains a Flask-based microservice powered by an XGBoost
 
 7. **Folder Structure**:
    ```
-   model/
-   ├── app/
-   │   ├── main.py              # Flask app with /predict endpoint
-   │   └── model.pkl            # Trained XGBoost model
-   ├── utils/
-   │   ├── train_model.py       # Generates training data and saves model.pkl
-   │   └── test_prediction.py   # Tests /predict endpoint
-   ├── Dockerfile               # Containerizes the Flask microservice
-   ├── requirements.txt         # Python dependencies
-   ├── deployment.yaml          # Kubernetes Deployment config
-   ├── service.yaml             # Kubernetes Service config
-   └── README.md                # Model documentation
-   ```
+model/
+├── app/                               # Flask app and saved model
+│   ├── main.py                        # The Flask app with the /predict route
+│   └── model.pkl                      # The trained XGBoost model used for predictions
+├── assets/                            # Images used in docs or README
+│   ├── browser-console.png            # Screenshot showing prediction in browser console
+│   ├── microservice-flow.png          # Diagram showing how data flows through the system
+│   ├── test-console.png               # Screenshot of test run in the terminal
+├── docs/                              # Project documentation
+│   └── developer_guide.md             # Guide for developers working on this service
+├── utils/                             # Extra scripts for training and testing
+│   ├── train_model.py                 # Creates and saves the model from training data
+│   └── test_prediction.py             # Sends a test request to check the /predict route
+├── Dockerfile                         # Instructions to run the app inside a Docker container
+├── requirements.txt                   # List of Python packages the app needs
+├── deployment.yaml                    # Kubernetes setup for deploying the app
+├── service.yaml                       # Kubernetes config for exposing the app as a service
+└── README.md                          # Main file with project info, setup steps, and usage
+```
 
 8. **Troubleshooting**:
    - **Module Not Found**: Run `pip install -r requirements.txt`.
