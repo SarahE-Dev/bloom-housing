@@ -14,14 +14,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
+COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the app code
 COPY app/ .
 
 # Expose port for Flask/Gunicorn
-EXPOSE 5000
+# EXPOSE 5001
 
 # Start with Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]

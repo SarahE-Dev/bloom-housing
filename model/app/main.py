@@ -15,7 +15,7 @@ try:
 except FileNotFoundError:
     raise Exception("Model file not found")
 
-@app.route("/predict", methods=["POST"])
+@app.route("/model", methods=["POST"])
 def predict():
     try:
         # Get JSON data

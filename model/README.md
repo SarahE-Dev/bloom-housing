@@ -4,7 +4,7 @@ This is a Flask-based microservice within the [`bloom-housing`](https://github.c
 
 This service is intended to be consumed by the main NestJS backend via `http://localhost:5000/predict`.
 
-> 📢 **Note**: If you're running this via Docker or Kubernetes, update the `application-service` endpoint in NestJS accordingly.
+> 📢 **Note**: If you're running this via Docker, update the `application-service` endpoint in NestJS accordingly.
 
 ---
 
@@ -14,8 +14,6 @@ This service is intended to be consumed by the main NestJS backend via `http://l
 - **Flask** – Micro web framework for the API
 - **XGBoost** – Machine learning model for risk scoring
 - **Docker** – Containerization
-- **Kubernetes** – Deployment and orchestration
-- **Minikube** – Local K8s cluster (for development/testing)
 - **Postman or curl** – API testing
 - **VS Code + Python extensions** – Suggested for development
 
@@ -39,7 +37,6 @@ Before starting, make sure you have the following installed:
 - pip (Python package manager)
 - Git
 - Docker (optional for containerized runs)
-- Minikube & kubectl (optional for K8s)
 - Your preferred env manager
 
 ---
@@ -56,8 +53,6 @@ model/
 │   └── test_prediction.py   # Sends test POST request to /predict endpoint
 ├── Dockerfile               # For containerizing the Flask microservice
 ├── requirements.txt         # Python dependencies
-├── deployment.yaml          # Kubernetes Deployment config
-├── service.yaml             # Kubernetes Service config
 └── README.md                # You’re here!
 ```
 
@@ -127,39 +122,6 @@ model/
    ```bash
    python utils/test_prediction.py
    ```
-
----
-
-## ☸️ Deploying with Kubernetes (Minikube)
-
-### 🔧 Start Minikube and build the image:
-
-```bash
-minikube start
-eval $(minikube docker-env)
-docker build -t housing-service .
-```
-
-### 📦 Apply Kubernetes configuration:
-
-```bash
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-```
-
-### 🌐 Expose the service:
-
-To forward the service to your machine's port:
-
-```bash
-kubectl port-forward housing-service-loadbalancer 5000:5000
-```
-
-Or to open it in your browser:
-
-```bash
-minikube service housing-service-loadbalancer
-```
 
 ---
 
@@ -245,7 +207,7 @@ This sends a request to `/predict` and logs the response.
 ## 🙌 Acknowledgements
 
 - Created as part of the [Bloom Housing](https://github.com/bloom-housing/bloom) initiative
-- Thanks to the open-source communities behind Flask, XGBoost, and Kubernetes
+- Thanks to the open-source communities behind Flask, XGBoost
 - Inspired by real-world housing application risk screening needs
 
 ---

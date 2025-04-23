@@ -1,0 +1,5 @@
+services:
+  model:
+    build: ./app
+    ports:
+      - "5000:5000" # Expose 2nd API port 5001
