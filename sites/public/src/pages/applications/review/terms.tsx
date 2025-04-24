@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useForm } from "react-hook-form"
 import Markdown from "markdown-to-jsx"
-import { t, FieldGroup, Form, AlertBox } from "@bloom-housing/ui-components"
+import { t, Field, FieldGroup, Form, AlertBox } from "@bloom-housing/ui-components"
 import { CardSection } from "@bloom-housing/ui-seeds/src/blocks/Card"
 import {
   OnClientSide,
@@ -200,6 +200,43 @@ const ApplicationTerms = () => {
                   fieldLabelClassName={"text-primary"}
                   dataTestId={"app-terms-agree"}
                 />
+                <p className="markdown">
+                  {t("application.review.terms.receiveResourcesText")}
+                </p>
+                <div className="flex flex-col">
+                  <Field
+                    id="receiveResourcesYes"
+                    name="receiveResources"
+                    type="radio"
+                    label={t("t.yes")}
+                    register={register}
+                    inputProps={{
+                      value: "yes",
+                    }}
+                    validation={{ required: true }}
+                    error={!!errors.receiveResources}
+                    errorMessage={t("errors.selectOption")}
+                    className="m-0"
+                    labelClassName="text-primary"
+                    dataTestId="app-terms-receive-resources-yes"
+                  />
+                  <Field
+                    id="receiveResourcesNo"
+                    name="receiveResources"
+                    type="radio"
+                    label={t("t.no")}
+                    register={register}
+                    inputProps={{
+                      value: "no",
+                    }}
+                    validation={{ required: true }}
+                    error={!!errors.receiveResources}
+                    errorMessage={t("errors.selectOption")}
+                    className="m-0"
+                    labelClassName="text-primary"
+                    dataTestId="app-terms-receive-resources-no"
+                  />
+                </div>
               </div>
             </div>
           </CardSection>
