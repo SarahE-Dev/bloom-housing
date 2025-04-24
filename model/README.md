@@ -1,8 +1,46 @@
-# 🏠 Housing Service Prediction Microservice
+# 🏠 Housing Risk Prediction Microservice
 
-This Flask-based microservice provides a `/predict` endpoint that returns a risk score based on anonymized housing-related application data. It's designed to be called by an external service — such as a Nest.js backend — at `http://localhost:5000/predict`.
+This is a Flask-based microservice within the [`bloom-housing`](https://github.com/SarahE-Dev/bloom-housing) monorepo. It powers housing instability screening by providing a `/predict` endpoint that returns a risk score based on anonymized housing application data.
 
-> 📢 **Note**: If you're running this with Docker or Kubernetes, make sure to update the hostname/IP in your Nest.js `application-service` to reflect the correct endpoint.
+This service is intended to be consumed by the main NestJS backend via `http://localhost:5000/predict`.
+
+> 📢 **Note**: If you're running this via Docker or Kubernetes, update the `application-service` endpoint in NestJS accordingly.
+
+---
+
+## 🧰 Technologies Used
+
+- **Python 3.10**
+- **Flask** – Micro web framework for the API
+- **XGBoost** – Machine learning model for risk scoring
+- **Docker** – Containerization
+- **Kubernetes** – Deployment and orchestration
+- **Minikube** – Local K8s cluster (for development/testing)
+- **Postman or curl** – API testing
+- **VS Code + Python extensions** – Suggested for development
+
+---
+
+## 📸 Features & Screenshots
+
+### ✅ Application submits and receives prediction in browser console
+<img src="./images/browser-console.png" alt="Browser console with prediction response" width="600"/>
+
+### 🧪 Local test request via `utils/test_prediction.py`
+<img src="./images/test-console.png" alt="Python script testing endpoint" width="600"/>
+
+---
+
+## 📋 Prerequisites
+
+Before starting, make sure you have the following installed:
+
+- Python 3.10+
+- pip (Python package manager)
+- Git
+- Docker (optional for containerized runs)
+- Minikube & kubectl (optional for K8s)
+- Your preferred env manager
 
 ---
 
@@ -25,42 +63,44 @@ model/
 
 ---
 
-## 🧪 Test Locally (No Docker or Kubernetes)
+## 💻 Installation & Setup (Locally)
 
-1. **Set up your virtual environment**:
+1. **Clone the repo and navigate to `model/`:**
+
+   ```bash
+   git clone https://github.com/SarahE-Dev/bloom-housing.git
+   cd bloom-housing/model
+   ```
+
+2. **Set up your virtual environment**:
 
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-2. **Install dependencies**:
+3. **Install dependencies**:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Train the model** (this creates `app/model.pkl`):
+4. **Train the model**:
 
    ```bash
    python utils/train_model.py
    ```
 
-4. **Start the Flask app**:
-
-   First, move into the `app/` directory:
+5. **Run the Flask app**:
 
    ```bash
    cd app
    python main.py
    ```
 
-   The microservice will be running at:  
-   `http://localhost:5000/predict`
+6. **Test the API**:
 
-5. **Test the endpoint**:
-
-   (in a separate terminal, from the model/ directory):
+   In another terminal from the model directory:
 
    ```bash
    python utils/test_prediction.py
@@ -68,12 +108,12 @@ model/
 
 ---
 
-## 🐳 Run with Docker
+## 🐳 Running with Docker
 
 1. **Build the image**:
 
    ```bash
-   docker build -t housing-service .  
+   docker build -t housing-service .
    ```
 
 2. **Run the container**:
@@ -82,7 +122,7 @@ model/
    docker run -p 5000:5000 housing-service
    ```
 
-3. **Test the endpoint** (in another terminal):
+3. **Test the endpoint**:
 
    ```bash
    python utils/test_prediction.py
@@ -90,29 +130,24 @@ model/
 
 ---
 
-## ☸️ Run with Kubernetes (Minikube)
+## ☸️ Deploying with Kubernetes (Minikube)
 
-### 🔧 Start Minikube
+### 🔧 Start Minikube and build the image:
 
 ```bash
 minikube start
-```
-
-If you're using local Docker images:
-
-```bash
 eval $(minikube docker-env)
 docker build -t housing-service .
 ```
 
-### 📦 Apply Kubernetes config
+### 📦 Apply Kubernetes configuration:
 
 ```bash
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 ```
 
-### 🌐 Expose the service
+### 🌐 Expose the service:
 
 To forward the service to your machine's port:
 
@@ -132,9 +167,9 @@ minikube service housing-service-loadbalancer
 
 ### `POST /predict`
 
-Sends anonymized housing-related features to get a risk score prediction.
+Send anonymized housing-related features and receive a risk score.
 
-#### 📥 Request Body
+#### Example Request Body:
 
 ```json
 {
@@ -149,9 +184,9 @@ Sends anonymized housing-related features to get a risk score prediction.
 }
 ```
 
-> All fields are required. `housing_status` is encoded numerically (e.g., 0: homeless, 1: renting, 2: stable).
+> `housing_status` is a numeric encoding (e.g., 0: homeless, 1: renting, 2: stable)
 
-#### 📤 Response
+#### Example Response:
 
 ```json
 {
@@ -160,21 +195,14 @@ Sends anonymized housing-related features to get a risk score prediction.
 }
 ```
 
-#### ⚠️ Errors
-
-- `400`: Missing or malformed fields  
-- `500`: Internal server error (e.g., model not found)
-
 ---
 
 ## 🔁 System Flow: Next.js → NestJS → Microservice
 
-This diagram shows the data flow through the system:
-
-1. A user submits their application via the **Next.js frontend**.
-2. The **NestJS backend** receives the application data, anonymizes it, and sends a `POST` request to the `/predict` endpoint exposed by this Flask microservice.
-3. The **Flask microservice** uses a trained ML model to compute a risk score and responds with a prediction.
-4. The **NestJS backend** then returns this result to the frontend for further user interaction or display.
+1. **Next.js frontend** gathers housing application data.
+2. **NestJS backend** processes and anonymizes the request.
+3. Sends a `POST` to `/predict` (this Flask service).
+4. The **model** predicts and returns a risk score.
 
 <p align="center">
   <img src="./images/microservice-flow.png" alt="System Flow Diagram" width="700"/>
@@ -182,21 +210,46 @@ This diagram shows the data flow through the system:
 
 ---
 
-## 🛠 Model Training
+## 🛠 Model Training Details
 
-The model is trained using synthetic housing data generated by `utils/train_model.py`. It outputs `model.pkl` in the `app/` directory.
+Model is trained using synthetic data generated by `train_model.py`, and saved to `app/model.pkl`.
 
-> ✅ **Best Practice**: Run this script before building your Docker image or deploying to Kubernetes.
+> ⚠️ Always re-train before deploying if you update the model logic or schema.
 
 ---
 
 ## 🧪 Testing
 
-You can run `utils/test_prediction.py` to test the microservice locally or on any live deployment.
+Run:
+
+```bash
+python utils/test_prediction.py
+```
+
+This sends a request to `/predict` and logs the response.
 
 ---
 
-## 🧘 Privacy & Ethics
+## 📈 Development Status & Roadmap
 
-This service must only receive **anonymized** data — no names, contact info, or personally identifiable information (PII) should ever be sent.
+✅ MVP: Local and Dockerized version of the model.
+🔲 Real Data Integration: Replace mock data with actual housing application data.
+🔲 Data Transformation: Ensure proper data preprocessing, including encoding of categorical variables.
+🔲 Model Tuning: Fine-tune the model hyperparameters and improve prediction accuracy.
+🔲 Feature Expansion: Add more features to improve the risk prediction.
+🔲 Cloud Integration: Prepare for deployment to cloud platforms like AWS or GCP.
+🔲 Monitoring and Logging: Implement logging for better error handling and prediction tracking.
 
+---
+
+## 🙌 Acknowledgements
+
+- Created as part of the [Bloom Housing](https://github.com/bloom-housing/bloom) initiative
+- Thanks to the open-source communities behind Flask, XGBoost, and Kubernetes
+- Inspired by real-world housing application risk screening needs
+
+---
+
+## 📄 License
+
+MIT License — see the root `LICENSE` file for details.
