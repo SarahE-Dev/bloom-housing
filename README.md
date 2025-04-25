@@ -120,8 +120,8 @@ The `model/app/` directory contains a Flask-based microservice powered by an XGB
    Start the Flask API server:
 
    ```bash
-   cd predict
-   python predict/main.py
+   cd app
+   python main.py
    ```
 
    The service will be available at `http://localhost:5000/predict`.
