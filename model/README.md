@@ -105,7 +105,7 @@ model/
 
    ```bash
    cd app # Won't find model if you're not in the same directory
-   python app/main.py
+   python main.py
    ```
 
 6. **Test the API**:
