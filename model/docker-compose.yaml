@@ -1,5 +1,5 @@
 services:
-  model:
+  risk-prediction:
     build: ./app
     ports:
-      - "5000:5000" # Expose port 5000
+      - "5000:5000" # Expose port 5000 on host and container
