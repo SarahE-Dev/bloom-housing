@@ -48,8 +48,14 @@ const ApplicationTerms = () => {
     if (!submitting && !application.confirmationCode) {
       setSubmitting(true)
       const acceptedTerms = data.agree === "agree"
-      conductor.currentStep.save({ acceptedTerms })
+      const predictRisk = data.predictRisk === "yes"
+      
+      conductor.currentStep.save({ 
+        acceptedTerms,
+        predictRisk
+      })
       application.acceptedTerms = acceptedTerms
+      application.predictRisk = predictRisk
       application.completedSections = 6
 
       if (application?.programs?.length) {
@@ -68,6 +74,7 @@ const ApplicationTerms = () => {
               id: listing.id,
             },
             appUrl: window.location.origin,
+            predictRisk: predictRisk,
             ...(profile && {
               user: {
                 id: profile.id,
@@ -77,8 +84,17 @@ const ApplicationTerms = () => {
           },
         })
         .then((result) => {
-          conductor.currentStep.save({ confirmationCode: result.confirmationCode, riskScore: result.riskScore })
-          console.log(`Risk score returned from server: ${result.riskScore}`);
+          conductor.currentStep.save({ 
+            confirmationCode: result.confirmationCode, 
+            riskScore: predictRisk ? result.riskScore : null 
+          })
+          
+          if (predictRisk) {
+            console.log(`Risk score returned from server: ${result.riskScore}`);
+          } else {
+            console.log('Risk prediction was not requested');
+          }
+          
           return router.push("/applications/review/confirmation")
         })
         .catch((err) => {
@@ -205,8 +221,8 @@ const ApplicationTerms = () => {
                 </p>
                 <div className="flex flex-col">
                   <Field
-                    id="receiveResourcesYes"
-                    name="receiveResources"
+                    id="predictRiskYes"
+                    name="predictRisk"
                     type="radio"
                     label={t("t.yes")}
                     register={register}
@@ -214,15 +230,14 @@ const ApplicationTerms = () => {
                       value: "yes",
                     }}
                     validation={{ required: true }}
-                    error={!!errors.receiveResources}
-                    errorMessage={t("errors.selectOption")}
+                    error={!!errors.predictRisk}
                     className="m-0"
                     labelClassName="text-primary"
-                    dataTestId="app-terms-receive-resources-yes"
+                    dataTestId="app-terms-predict-risk-yes"
                   />
                   <Field
-                    id="receiveResourcesNo"
-                    name="receiveResources"
+                    id="predictRiskNo"
+                    name="predictRisk"
                     type="radio"
                     label={t("t.no")}
                     register={register}
@@ -230,11 +245,11 @@ const ApplicationTerms = () => {
                       value: "no",
                     }}
                     validation={{ required: true }}
-                    error={!!errors.receiveResources}
+                    error={!!errors.predictRisk}
                     errorMessage={t("errors.selectOption")}
                     className="m-0"
                     labelClassName="text-primary"
-                    dataTestId="app-terms-receive-resources-no"
+                    dataTestId="app-terms-predict-risk-no"
                   />
                 </div>
               </div>

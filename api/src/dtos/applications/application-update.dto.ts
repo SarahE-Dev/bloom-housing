@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { ArrayMaxSize, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsBoolean, IsOptional, ValidateNested } from 'class-validator';
 import { ValidationsGroupsEnum } from '../../enums/shared/validation-groups-enum';
 import { AddressCreate } from '../addresses/address-create.dto';
 import { AccessibilityUpdate } from './accessibility-update.dto';
@@ -76,4 +76,11 @@ export class ApplicationUpdate extends OmitType(Application, [
   @Type(() => IdDTO)
   @ApiProperty({ type: IdDTO, isArray: true })
   preferredUnitTypes: IdDTO[];
+
+  @Expose()
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ type: Boolean, required: false })
+  predictRisk?: boolean;
+  
 }
