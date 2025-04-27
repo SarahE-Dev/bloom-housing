@@ -24,10 +24,10 @@ This service is intended to be consumed by the main NestJS backend via `http://l
 ## 📸 Features & Screenshots
 
 ### ✅ Application submits and receives prediction in browser console
-<img src="./images/browser-console.png" alt="Browser console with prediction response" width="600"/>
+<img src="./assets/browser-console.png" alt="Browser console with prediction response" width="600"/>
 
 ### 🧪 Local test request via `utils/test_prediction.py`
-<img src="./images/test-console.png" alt="Python script testing endpoint" width="600"/>
+<img src="./assets/test-console.png" alt="Python script testing endpoint" width="600"/>
 
 ---
 
@@ -54,6 +54,7 @@ model/
 ├── assets/                            # Images used in docs or README
 │   ├── browser-console.png            # Screenshot showing prediction in browser console
 │   ├── microservice-flow.png          # Diagram showing how data flows through the system
+│   ├── risk_microservice_system_design_diagram.png # Diagram showing architecture of the system
 │   ├── test-console.png               # Screenshot of test run in the terminal
 ├── docs/                              # Project documentation
 │   └── developer_guide.md             # Guide for developers working on this service
@@ -211,7 +212,7 @@ Send anonymized housing-related features and receive a risk score.
 4. The **model** predicts and returns a risk score.
 
 <p align="center">
-  <img src="./images/microservice-flow.png" alt="System Flow Diagram" width="700"/>
+  <img src="./assets/microservice-flow.png" alt="System Flow Diagram" width="700"/>
 </p>
 
 ---
