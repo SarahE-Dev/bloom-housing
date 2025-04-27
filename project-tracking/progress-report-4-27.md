@@ -6,7 +6,8 @@
 - **API**: Flask `model-service` with `/predict` endpoint accepting JSON inputs (e.g., `{"rent": 1000, "income": 30000, "household_size": 2}`). Integrated with the Nest.js backend via `/applications/submit`.  
 - **Frontend**: PRs that were blocking progress have now been reviewed. Sarah will move forward with implementing the full form functionality, and Ryan will work on setting up the basic UI to display the risk score returned from the model.  
 - **Documentation**: Darien added new documentation for the model service; merge conflicts are being resolved currently.  
-- **Data**: Nashid is looking into sourcing additional real-world data for future model improvements.
+- **Data**: Nashid is looking into sourcing additional real-world data for future model improvements.  
+- **Slides**: Darien also used AHS and HUD data to update the slides and fix visualizations based on feedback we received after the last presentation.
 
 ## Feedback from Progress Presentation  
 - No specific technical concerns were raised.  
@@ -17,5 +18,6 @@
 - Sarah to complete the full form integration with the backend.  
 - Ryan to build out the basic UI for displaying the risk score prediction.  
 - Nashid to continue exploring additional datasets.  
-- Darien to continue updating and refining the documentation.  
+- Darien to continue updating and refining the documentation.
+
 
