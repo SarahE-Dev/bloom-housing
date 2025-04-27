@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import numpy as np
@@ -10,10 +11,11 @@ CORS(app)  # Enable CORS for all routes
 
 # Load model
 try:
-    with open("mock-model.pkl", "rb") as f:
+    model_path = os.path.join(os.path.dirname(__file__), "mock-model.pkl")
+    with open(model_path, "rb") as f:
         model = pickle.load(f)
 except FileNotFoundError:
-    raise Exception("Model file not found")
+    raise Exception(f"Model file not found at {model_path}")
 
 
 @app.route("/predict", methods=["POST"])
