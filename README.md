@@ -146,6 +146,7 @@ model/
 ├── assets/                            # Images used in docs or README
 │   ├── browser-console.png            # Screenshot showing prediction in browser console
 │   ├── microservice-flow.png          # Diagram showing how data flows through the system
+│   ├── risk_microservice_system_design_diagram.png # Diagram showing architecture of the system
 │   ├── test-console.png               # Screenshot of test run in the terminal
 ├── docs/                              # Project documentation
 │   └── developer_guide.md             # Guide for developers working on this service
