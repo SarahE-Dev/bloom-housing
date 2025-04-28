@@ -28,7 +28,7 @@ Bloom uses a monorepo-style repository containing multiple user-facing applicati
 ```
 bloom/
 ├── api/                    # Backend services (NestJS, Prisma, Postgres)
-├── model/                  # Unhoused risk prediction microservice (Python, Flask, XGBoost)
+├── model/                  # Risk prediction microservice (Python, Flask, XGBoost)
 ├── sites/                  # Frontend applications
 │   ├── public/             # Applicant-facing portal (Next.js)
 │   └── partners/           # Developer and admin portal (Next.js)
@@ -64,6 +64,7 @@ Configuration is read from environment variables. Copy `.env.template` to `.env`
 ### VSCode Extensions
 
 Recommended extensions for VSCode:
+
 - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode): Enable `Format on Save` (⌘⇧P > Open User Settings > search `Format on Save` > enable, then Reload Window).
 - [Postgres Explorer](https://marketplace.visualstudio.com/items?itemName=ckolkman.vscode-postgres): Inspect local database (see [api/README](https://github.com/bloom-housing/bloom/blob/main/api/README.md)).
 - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker): Flags spelling errors.
@@ -74,142 +75,134 @@ Recommended extensions for VSCode:
 ### Running a Local Test Server
 
 Run `yarn dev:all` from the root to start three processes on different ports:
+
 - Public app: `http://localhost:3000`
 - Partners app: `http://localhost:3001`
 - API: `http://localhost:3100`
 
 Alternatively, run each process individually from separate terminals in `api`, `sites/public`, or `sites/partners` with `yarn dev`.
 
-### Unhoused Risk Prediction Model
+### Risk Prediction Model
 
-The `model/` directory contains a Flask-based microservice powered by an XGBoost model to predict housing instability risk based on features like income, household size, housing status, income vouchers, household expecting changes, and household student status. It exposes a `/predict` endpoint and can be run standalone for local development or testing without requiring the full Bloom platform.
+The `model/app/` directory contains a Flask-based microservice powered by an XGBoost model to predict housing instability risk based on features like income, household size, housing status, income vouchers, household expecting changes, and household student status. It exposes a `/predict` endpoint and can be run standalone for local development or testing without requiring the full Bloom platform.
 
 #### Setup and Run Locally (Standalone)
 
 1. **Prerequisites**:
+
    - Python 3.10+ ([python.org](https://www.python.org/downloads/)).
    - pip (Python package manager).
    - Git.
    - Optional: Docker for containerized runs, Minikube and kubectl for Kubernetes.
 
 2. **Set Up Virtual Environment**:
+
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install Dependencies**:
    Install required Python libraries (e.g., flask, xgboost, pandas, numpy):
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Train the Model**:
-   Generate synthetic training data and save the trained model to `app/model.pkl`:
+   Generate synthetic training data and save the trained model to `app/mock-model.pkl`:
+
    ```bash
    python utils/train_model.py
    ```
 
 5. **Run the Flask Microservice**:
    Start the Flask API server:
+
    ```bash
    cd app
    python main.py
    ```
-   The service will be available at `http://localhost:5000`.
+
+   The service will be available at `http://localhost:5000/predict`.
 
 6. **Test the API**:
    In another terminal from the `model/` directory, send a test request to the `/predict` endpoint:
+
    ```bash
    python utils/test_prediction.py
    ```
+
    Alternatively, use `curl` or Postman:
+
    ```bash
    curl -X POST http://localhost:5000/predict \
      -H "Content-Type: application/json" \
      -d '{"features": {"income": 1800, "household_size": 3, "housing_status": 1, "income_vouchers": true, "household_expecting_changes": false, "household_student": true}}'
    ```
+
    Expected response:
+
    ```json
    {
      "risk_score": 0.82,
-     "message": "Risk score represents likelihood of being unhoused (0 to 1, higher is riskier)"
+     "message": "Risk score represents likelihood of becoming unhoused (0 to 1, higher is riskier)"
    }
    ```
 
 7. **Folder Structure**:
+
    ```
-model/
-├── app/                               # Flask app and saved model
-│   ├── main.py                        # The Flask app with the /predict route
-│   └── model.pkl                      # The trained XGBoost model used for predictions
-├── assets/                            # Images used in docs or README
-│   ├── browser-console.png            # Screenshot showing prediction in browser console
-│   ├── microservice-flow.png          # Diagram showing how data flows through the system
-│   ├── risk_microservice_system_design_diagram.png # Diagram showing architecture of the system
-│   ├── test-console.png               # Screenshot of test run in the terminal
-├── docs/                              # Project documentation
-│   └── developer_guide.md             # Guide for developers working on this service
-├── utils/                             # Extra scripts for training and testing
-│   ├── train_model.py                 # Creates and saves the model from training data
-│   └── test_prediction.py             # Sends a test request to check the /predict route
-├── Dockerfile                         # Instructions to run the app inside a Docker container
-├── requirements.txt                   # List of Python packages the app needs
-├── deployment.yaml                    # Kubernetes setup for deploying the app
-├── service.yaml                       # Kubernetes config for exposing the app as a service
-└── README.md                          # Main file with project info, setup steps, and usage
-```
+    model/
+    ├── app/
+    │   ├── Dockerfile           # Model container setup
+    │   ├── main.py              # Flask app with /predict endpoint
+    │   ├── mock-model.pkl       # Mock XGBoost model (generated by utils/train_model.py)
+    │   └── requirements.txt     # Specific requirements for prediction container
+    │
+    ├── assets/                            # Images used in docs or README
+    │   ├── browser-console.png            # Screenshot showing prediction in browser console
+    │   ├── microservice-flow.png          # Diagram showing how data flows through the system
+    │   ├── risk_microservice_system_design_diagram.png # Diagram showing architecture of the system
+    │   └── test-console.png               # Screenshot of test run in the terminal
+    |
+    ├── docs/                              # Project documentation
+    |   └── developer_guide.md             # Guide for developers working on this service
+    │
+    ├── notebooks/
+    │   ├── 1-ahs_dataset_formatting.ipynb      # Initial data cleaning and feature engineering on AHS'23 Dataset
+    │   └── 2-model_selection.ipynb             # Model selection, experimentation, and explainability using AHS'23 Dataset
+    |
+    ├── utils/
+    │   ├── test_prediction.py        # Sends test POST request to /predict endpoint
+    │   └── train_model.py            # Script to generate training data and save mock-model.pkl
+    │
+    ├── docker-compose.yaml      # Builds and sets up container environment
+    ├── requirements.txt         # Python dependencies (All container dependencies)
+    └── README.md                # You’re here!
+   ```
 
 8. **Troubleshooting**:
    - **Module Not Found**: Run `pip install -r requirements.txt`.
    - **Port Conflict**: If port 5000 is in use, update the port in `app/main.py`.
-   - **Model File Missing**: Run `python utils/train_model.py` to generate `app/model.pkl`.
+   - **Model File Missing**: Run `python utils/train_model.py` to generate `app/mock-model.pkl`.
    - **API Errors**: Check server logs or see model/README.
 
-#### Running with Docker
+## 🐳 Running with Docker
 
-1. **Build the Image**:
+1. **Build and Run the container**:
+
    ```bash
-   docker build -t housing-service .
+   docker compose up --build
    ```
 
-2. **Run the Container**:
-   ```bash
-   docker run -p 5000:5000 housing-service
-   ```
+   **NOTE:** You can drop the `--build` flag after the initial build to run the containers. If any changes are made, include it to rebuild the containers with the additions included.
 
-3. **Test the Endpoint**:
+2. **Test the endpoint**:
+
    ```bash
    python utils/test_prediction.py
    ```
-
-#### Deploying with Kubernetes (Minikube)
-
-1. **Start Minikube and Build Image**:
-   ```bash
-   minikube start
-   eval $(minikube docker-env)
-   docker build -t housing-service .
-   ```
-
-2. **Apply Kubernetes Configuration**:
-   ```bash
-   kubectl apply -f deployment.yaml
-   kubectl apply -f service.yaml
-   ```
-
-3. **Expose the Service**:
-   Forward the service to your machine:
-   ```bash
-   kubectl port-forward housing-service-loadbalancer 5000:5000
-   ```
-   Or open in browser:
-   ```bash
-   minikube service housing-service-loadbalancer
-   ```
-
-4. **Test the Endpoint**:
-   Use `python utils/test_prediction.py` or `curl` as above.
 
 #### Prediction API
 
@@ -233,7 +226,7 @@ model/
   ```json
   {
     "risk_score": 0.82,
-    "message": "Risk score represents likelihood of being unhoused (0 to 1, higher is riskier)"
+    "message": "Risk score represents likelihood of becoming unhoused (0 to 1, higher is riskier)"
   }
   ```
 
@@ -274,6 +267,7 @@ Development tasks are managed via [GitHub Issues](https://github.com/bloom-housi
 ### Committing
 
 Bloom uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages. On commit, linting and conventional commit verification run automatically. Use one of these methods:
+
 - Install [Commitizen](https://commitizen.github.io/cz-cli/) (`npm install -g commitizen`) and run `git cz` for a CLI to build commit messages.
 - Run `git commit` with a message following the conventional standard; the linter will fail if it doesn’t comply.
 
