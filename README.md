@@ -4,122 +4,273 @@ Bloom is [Exygy](https://www.exygy.com/)’s affordable housing platform. Bloom'
 
 ## Overview
 
-![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white) ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white) ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![SASS](https://img.shields.io/badge/SASS-hotpink.svg?style=for-the-badge&logo=SASS&logoColor=white) ![Jest](https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white) ![cypress](https://img.shields.io/badge/-cypress-%23E5E5E5?style=for-the-badge&logo=cypress&logoColor=058a5e) ![Testing-Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style=for-the-badge&logo=testing-library&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next-black?style-for-the-badge&logo=next.js&logoColor=white)
+![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style-for-the-badge&logo=nestjs&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-3982CE?style-for-the-badge&logo=Prisma&logoColor=white)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style-for-the-badge&logo=postgresql&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style-for-the-badge&logo=python&logoColor=ffdd54)
+![Flask](https://img.shields.io/badge/flask-%23000.svg?style-for-the-badge&logo=flask&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-%23d6f0fa.svg?style-for-the-badge&logo=xgboost&logoColor=black)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style-for-the-badge&logo=docker&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style-for-the-badge&logo=kubernetes&logoColor=white)
+![SASS](https://img.shields.io/badge/SASS-hotpink.svg?style-for-the-badge&logo=SASS&logoColor=white)
+![Jest](https://img.shields.io/badge/-jest-%23C21325?style-for-the-badge&logo=jest&logoColor=white)
+![Cypress](https://img.shields.io/badge/-cypress-%23E5E5E5?style-for-the-badge&logo=cypress&logoColor=058a5e)
+![Testing-Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style-for-the-badge&logo=testing-library&logoColor=white)
 
 Bloom consists of a client/server architecture using [Next.js](https://nextjs.org) for the frontend applications and [NestJS](https://nestjs.com), [Prisma](https://www.prisma.io/), and [Postgres](https://www.postgresql.org/) on the backend.
 
 ### Structure
 
-Bloom uses a monorepo-style repository containing multiple user-facing applications and backend services. The three main high-level packages are `api`, `sites`, and `shared-helpers`. Additionally, Bloom's UI leverages the in-house packages `@bloom-housing/ui-seeds` and `@bloom-housing/ui-components`.
+Bloom uses a monorepo-style repository containing multiple user-facing applications and backend services. The main high-level packages are `api`, `sites`, `model`, and `shared-helpers`. Additionally, Bloom's UI leverages the in-house packages `@bloom-housing/ui-seeds` and `@bloom-housing/ui-components`.
 
-The `sites` folder contains reference implementations for both the public and partner applications:
+```
+bloom/
+├── api/                    # Backend services (NestJS, Prisma, Postgres)
+├── model/                  # Risk prediction microservice (Python, Flask, XGBoost)
+├── sites/                  # Frontend applications
+│   ├── public/             # Applicant-facing portal (Next.js)
+│   └── partners/           # Developer and admin portal (Next.js)
+├── shared-helpers/         # Shared types, functions, and components
+├── @bloom-housing/ui-seeds # Design system and React component library
+├── @bloom-housing/ui-components # Legacy component library (being phased out)
+```
 
----
+- **`sites/public`**: Applicant-facing site for browsing and applying to listings using Bloom’s Common Application or third-party applications. See [sites/public/README](https://github.com/bloom-housing/bloom/blob/main/sites/public/README.md).
+- **`sites/partners`**: Secure portal for housing developers, property managers, and city/county employees to manage applications and listings. Requires login. See [sites/partners/README](https://github.com/bloom-housing/bloom/blob/main/sites/partners/README.md).
+- **`api`**: Backend services (e.g., listings, applications, users) stored in a Postgres database and served via a REST API over HTTPS. See [api/README](https://github.com/bloom-housing/bloom/blob/main/api/README.md).
+- **`model`**: Flask-based microservice using XGBoost to predict housing instability risk based on features like income and household size. Exposes a `/predict` endpoint. See [model/README](https://github.com/bloom-housing/bloom/blob/main/model/README.md).
+- **`shared-helpers`**: Shared types, functions, and components for public and partners sites. See [shared-helpers/README](https://github.com/bloom-housing/bloom/blob/main/shared-helpers/README.md).
+- **`@bloom-housing/ui-seeds`**: Component library with React components and design system tokens. Explore the [Storybook](https://storybook-ui-seeds.netlify.app/?path=/story/tokens-introduction--page) and [design documentation](https://zeroheight.com/5e69dd4e1/p/938cb5-seeds-design-system).
+- **`@bloom-housing/ui-components`**: Legacy component library, being replaced by `ui-seeds`. View the [Storybook](https://storybook.bloom.exygy.dev/).
 
-- `sites/public` is the applicant-facing site available to the general public. It provides the ability to browse and apply for available listings either using the Common Application (which we build and maintain) or an external link to a third-party online or paper application.
-- Visit [sites/public/README](https://github.com/bloom-housing/bloom/blob/main/sites/public/README.md) for more details.
+## Getting Started for Developers
 
-- `sites/partners` is the site designed for housing developers, property managers, and city/county (jurisdiction) employees. For application management, it offers the ability to view, edit, and export applications for listings and other administrative tasks. For listing management, it offers the ability to create, edit, and publish listings. A login is required to use the Partners Portal.
-- Visit [sites/partners/README](https://github.com/bloom-housing/bloom/blob/main/sites/partners/README.md) for more details.
+If this is your first time working with Bloom, check the `sites/public`, `sites/partners`, `api`, and `model` README files for specific configuration details before proceeding with the setup instructions below.
 
----
-
-- `api` is the container for the key backend services (e.g. listings, applications, users). Information is stored in a Postgres database and served over HTTPS to the front-end (either at build time for things that can be server-rendered, or at run time). Services expose a REST API.
-- Visit [api/README](https://github.com/bloom-housing/bloom/blob/main/api/README.md) for more details.
-
----
-
-- `shared-helpers` contains types, functions, and components that are shared between the public and partners sites.
-- Visit [shared-helpers/README](https://github.com/bloom-housing/bloom/blob/main/shared-helpers/README.md) for more details.
-
----
-
-- `@bloom-housing/ui-seeds` (Seeds) is our component library based on our internal design system. It is comprised of React components and design system tokens. The published ui-seeds [Storybook](https://storybook.js.org/) can be found [here](https://storybook-ui-seeds.netlify.app/?path=/story/tokens-introduction--page). For further details visit the [ui-seeds repository](https://github.com/bloom-housing/ui-seeds) and our [external design documentation](https://zeroheight.com/5e69dd4e1/p/938cb5-seeds-design-system) on Zeroheight.
-
-- `@bloom-housing/ui-components` (UIC) is also an internal component library - but it is being slowly replaced with `ui-seeds` which is the next iteration. The published ui-components storybook can be found [here](https://storybook.bloom.exygy.dev/). For further details visit the [ui-components repository](https://github.com/bloom-housing/ui-components).
-
-## Getting started for developers
-
-If this is your first time working with Bloom, please be sure to check out the `sites/public`, `sites/partners`, and `api` README files for important and specific configuration information. After doing so, you can proceed with the below setup instructions.
-
-## Starting locally
+## Starting Locally
 
 ### Dependencies
 
-Run `yarn install` at root and from within the api directory.
+Run `yarn install` at the root and from within the `api` directory.
 
-If you don't have yarn installed, you can install homebrew with [these instructions](https://brew.sh/) and then do so with `brew install yarn`.
+If you don’t have Yarn installed, install [Homebrew](https://brew.sh/) and run `brew install yarn`.
 
-### Local environment variables
+### Local Environment Variables
 
-Configuration of each app and service is read from environment variables. There is an `.env.template` file in `sites/public`, `sites/partners`, and `api` that must be copied to an `.env` at the same level. Some keys are secret and are internally available. The template files include default values and descriptions of each variable.
+Configuration is read from environment variables. Copy `.env.template` to `.env` in `sites/public`, `sites/partners`, `api`, and `model`. Some keys are secret and available internally. Template files include default values and variable descriptions.
 
 ### VSCode Extensions
 
-If you use VSCode, these are some recommended extensions.
+Recommended extensions for VSCode:
 
-With the [Prettier plugin](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) installed, ⌘⇧P Open User Settings, search for and enable `Format on Save`, and then ⌘⇧P Reload Window. When you save a file locally, it should automatically format according to our configuration.
+- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode): Enable `Format on Save` (⌘⇧P > Open User Settings > search `Format on Save` > enable, then Reload Window).
+- [Postgres Explorer](https://marketplace.visualstudio.com/items?itemName=ckolkman.vscode-postgres): Inspect local database (see [api/README](https://github.com/bloom-housing/bloom/blob/main/api/README.md)).
+- [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker): Flags spelling errors.
+- [CSS Variable Autocomplete](https://marketplace.visualstudio.com/items?itemName=vunguyentuan.vscode-css-variables): Autocompletes `ui-seeds` CSS variables (see [public/README](https://github.com/bloom-housing/bloom/blob/main/sites/public/README.md)).
+- [CSS Module Autocomplete](https://marketplace.visualstudio.com/items?itemName=clinyong.vscode-css-modules): Autocompletes CSS module files.
+- [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python): Supports model development.
 
-The [Postgres explorer plugin](https://marketplace.visualstudio.com/items?itemName=ckolkman.vscode-postgres) will let you inspect your local database (more setup instructions in the [api README](https://github.com/bloom-housing/bloom/blob/main/api/README.md)).
+### Running a Local Test Server
 
-The [Code Spell Checker plugin](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker) will flag spelling errors.
+Run `yarn dev:all` from the root to start three processes on different ports:
 
-The [CSS variable autocomplete plugin](https://marketplace.visualstudio.com/items?itemName=vunguyentuan.vscode-css-variables&ssr=false#overview) will pull in all CSS variable definitions from ui-seeds for autocompletion (more setup instructions in the [public README](https://github.com/bloom-housing/bloom/blob/main/sites/public/README.md)).
+- Public app: `http://localhost:3000`
+- Partners app: `http://localhost:3001`
+- API: `http://localhost:3100`
 
-The [CSS module autocomplete plugin](https://marketplace.visualstudio.com/items?itemName=clinyong.vscode-css-modules) which provides autocomplete for CSS module files.
+Alternatively, run each process individually from separate terminals in `api`, `sites/public`, or `sites/partners` with `yarn dev`.
 
-### Running a local test server
+### Risk Prediction Model
 
-Running `yarn dev:all` from root runs 3 processes for both apps and the backend services on 3 different ports:
+The `model/app/` directory contains a Flask-based microservice powered by an XGBoost model to predict housing instability risk based on features like income, household size, housing status, income vouchers, household expecting changes, and household student status. It exposes a `/predict` endpoint and can be run standalone for local development or testing without requiring the full Bloom platform.
 
-- 3000 for the public app
-- 3001 for the partners app
-- 3100 for the api
+#### Setup and Run Locally (Standalone)
 
-You can also run each process individually from separate terminals with the following command in each directory: `yarn dev`.
+1. **Prerequisites**:
 
-### Bloom UIC development
+   - Python 3.10+ ([python.org](https://www.python.org/downloads/)).
+   - pip (Python package manager).
+   - Git.
+   - Optional: Docker for containerized runs, Minikube and kubectl for Kubernetes.
 
-Because Bloom's ui-components package is a separate open source repository, developing in Bloom while concurrently iterating in ui-components requires linking the folders with the following steps:
+2. **Set Up Virtual Environment**:
 
-### Directory setup
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-1. Clone both Bloom and the [ui-components repository](https://github.com/bloom-housing/ui-components) on the same directory level.
+3. **Install Dependencies**:
+   Install required Python libraries (e.g., flask, xgboost, pandas, numpy):
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Train the Model**:
+   Generate synthetic training data and save the trained model to `app/mock-model.pkl`:
+
+   ```bash
+   python utils/train_model.py
+   ```
+
+5. **Run the Flask Microservice**:
+   Start the Flask API server:
+
+   ```bash
+   cd app
+   python main.py
+   ```
+
+   The service will be available at `http://localhost:5000/predict`.
+
+6. **Test the API**:
+   In another terminal from the `model/` directory, send a test request to the `/predict` endpoint:
+
+   ```bash
+   python utils/test_prediction.py
+   ```
+
+   Alternatively, use `curl` or Postman:
+
+   ```bash
+   curl -X POST http://localhost:5000/predict \
+     -H "Content-Type: application/json" \
+     -d '{"features": {"income": 1800, "household_size": 3, "housing_status": 1, "income_vouchers": true, "household_expecting_changes": false, "household_student": true}}'
+   ```
+
+   Expected response:
+
+   ```json
+   {
+     "risk_score": 0.82,
+     "message": "Risk score represents likelihood of becoming unhoused (0 to 1, higher is riskier)"
+   }
+   ```
+
+7. **Folder Structure**:
+
+   ```
+    model/
+    ├── app/
+    │   ├── Dockerfile           # Model container setup
+    │   ├── main.py              # Flask app with /predict endpoint
+    │   ├── mock-model.pkl       # Mock XGBoost model (generated by utils/train_model.py)
+    │   └── requirements.txt     # Specific requirements for prediction container
+    │
+    ├── assets/                            # Images used in docs or README
+    │   ├── browser-console.png            # Screenshot showing prediction in browser console
+    │   ├── microservice-flow.png          # Diagram showing how data flows through the system
+    │   ├── risk_microservice_system_design_diagram.png # Diagram showing architecture of the system
+    │   └── test-console.png               # Screenshot of test run in the terminal
+    |
+    ├── docs/                              # Project documentation
+    |   └── developer_guide.md             # Guide for developers working on this service
+    │
+    ├── notebooks/
+    │   ├── 1-ahs_dataset_formatting.ipynb      # Initial data cleaning and feature engineering on AHS'23 Dataset
+    │   └── 2-model_selection.ipynb             # Model selection, experimentation, and explainability using AHS'23 Dataset
+    |
+    ├── utils/
+    │   ├── test_prediction.py        # Sends test POST request to /predict endpoint
+    │   └── train_model.py            # Script to generate training data and save mock-model.pkl
+    │
+    ├── docker-compose.yaml      # Builds and sets up container environment
+    ├── requirements.txt         # Python dependencies (All container dependencies)
+    └── README.md                # You’re here!
+   ```
+
+8. **Troubleshooting**:
+   - **Module Not Found**: Run `pip install -r requirements.txt`.
+   - **Port Conflict**: If port 5000 is in use, update the port in `app/main.py`.
+   - **Model File Missing**: Run `python utils/train_model.py` to generate `app/mock-model.pkl`.
+   - **API Errors**: Check server logs or see model/README.
+
+## 🐳 Running with Docker
+
+1. **Build and Run the container**:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   **NOTE:** You can drop the `--build` flag after the initial build to run the containers. If any changes are made, include it to rebuild the containers with the additions included.
+
+2. **Test the endpoint**:
+
+   ```bash
+   python utils/test_prediction.py
+   ```
+
+#### Prediction API
+
+- **Endpoint**: `POST /predict`
+- **Purpose**: Returns a risk score (0 to 1, higher is riskier) based on housing-related features.
+- **Example Request**:
+  ```json
+  {
+    "features": {
+      "income": 1800,
+      "household_size": 3,
+      "housing_status": 1,
+      "income_vouchers": true,
+      "household_expecting_changes": false,
+      "household_student": true
+    }
+  }
+  ```
+  Note: `housing_status` is numeric (e.g., 0: homeless, 1: renting, 2: stable).
+- **Example Response**:
+  ```json
+  {
+    "risk_score": 0.82,
+    "message": "Risk score represents likelihood of becoming unhoused (0 to 1, higher is riskier)"
+  }
+  ```
+
+For integration with Bloom’s NestJS backend, configure the `application-service` in `api/` to call `http://localhost:5000/predict`. See [model/README](https://github.com/bloom-housing/bloom/blob/main/model/README.md) for further details.
+
+## Bloom UIC Development
+
+Because Bloom’s `ui-components` package is a separate open-source repository, developing in Bloom while iterating in `ui-components` requires linking the folders:
+
+### Directory Setup
+
+1. Clone both Bloom and the [ui-components repository](https://github.com/bloom-housing/ui-components) at the same directory level.
 
 ### Symlinking UIC
 
 1. In the Bloom directory, run `yarn link:uic`.
-2. Open the next.config.js file in the public and partner's directory.
-3. Uncomment the experimental property at the bottom of each file.
-4. Follow the directions above to run Bloom locally.
-   These steps allow you to edit your local version of ui-components and the changes will be reflected in the node_modules in Bloom.
+2. Open the `next.config.js` file in the `public` and `partners` directories.
+3. Uncomment the `experimental` property at the bottom of each file.
+4. Run Bloom locally with `yarn dev:all`.
+   This allows local `ui-components` changes to reflect in Bloom’s `node_modules`.
 
 ### Unlinking UIC
 
 1. In the Bloom directory, run `yarn unlink:uic`.
-2. Open the next.config.js file in the public and partner's directory.
-3. Comment out the experimental property at the bottom of each file.
-4. Follow the directions above to run Bloom locally.
-   Bloom will now be consuming the published version of @bloom-housing/ui-components specified in package.json and no local ui-component changes will be reflected.
+2. Open the `next.config.js` file in the `public` and `partners` directories.
+3. Comment out the `experimental` property.
+4. Run Bloom locally with `yarn dev:all`.
+   Bloom will use the published `@bloom-housing/ui-components` version specified in `package.json`.
 
 ## Contributing
 
-Contributions to the core Bloom applications and services are welcomed. To help us meet the project's goals around quality and maintainability, we ask that all contributors read, understand, and agree to our guidelines.
+Contributions to Bloom’s applications and services are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
 
-### Issue tracking
+### Issue Tracking
 
-Our development tasks are managed through GitHub issues and development in the vast majority of cases should be tied to an issue. Please feel free to submit issues even if you don't plan on implementing them yourself. Before creating an issue, check first to see if one already exists. When creating an issue fill out all of the provided fields and add as much information as possible including screenshots if possible. Please don't start work on an issue without checking in with the Bloom team first as it may already be in development! You can tag us (@ludtkemorgan, @emilyjablonski, @yazeedloonat) to get started on an issue or ask any questions.
+Development tasks are managed via [GitHub Issues](https://github.com/bloom-housing/bloom/issues). Submit issues even if you don’t plan to implement them. Check for existing issues before creating new ones, and provide detailed descriptions with screenshots. Contact the Bloom team (@ludtkemorgan, @emilyjablonski, @yazeedloonat) before starting work to avoid duplication.
 
 ### Committing
 
-We are also using [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), a specification for commit messages that indicates what type and level of change each commit is.
+Bloom uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages. On commit, linting and conventional commit verification run automatically. Use one of these methods:
 
-On commit, two steps automatically run: (1) linting and (2) a verification of the conventional commit standard. You can either, instead of running `git commit`, globally install commitizen (`npm install -g commitizen`) and then commit with `git cz` which will run a commit message CLI (the CLI asks a series of questions about your changeset and builds the commit message for you in the conventional commit format), or alternatively run `git commit` with your own message if you are confident it follows the conventional standard, and the linter will fail if it does not.
+- Install [Commitizen](https://commitizen.github.io/cz-cli/) (`npm install -g commitizen`) and run `git cz` for a CLI to build commit messages.
+- Run `git commit` with a message following the conventional standard; the linter will fail if it doesn’t comply.
 
 ### Pull Requests
 
-Pull requests are opened to the main branch. When opening a pull request please fill out the entire pull request template which includes tagging the issue your PR is related to, a description of your PR, including details for the reviewer about how to test your PR, and a testing checklist.
-
-When your PR is ready for review, add the `needs review(s)` label to surface it to our internal team. If you put up a PR that is not yet ready for eyes, add the `wip` label.
-
-As a reviewer on a PR, try not to leave only comments, but a clear next step action. If the PR requires further discussion or changes, mark it with Requested Changes. If a PR looks good to you (or even if there are small changes requested that won't require an additional review), please mark it with Approved and comment on the last few changes needed. This helps other reviewers better understand the state of PRs at the list view and prevents an additional unnecessary review cycle.
+Open pull requests to the `main` branch. Complete the PR template, including issue links, PR description, reviewer testing instructions, and a testing checklist. Label PRs as `needs review(s)` when ready or `wip` if in progress. Reviewers should provide clear next steps: mark “Requested Changes” for further work or “Approved” for minor changes not requiring re-review, with comments on remaining tasks.

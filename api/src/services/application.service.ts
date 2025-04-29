@@ -38,6 +38,10 @@ import { ApplicationsFilterEnum } from '../enums/applications/filter-enum';
 import { PublicAppsViewResponse } from '../dtos/applications/public-apps-view-response.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import {
+  getModelPrediction,
+  mapDtoToModelFeatures,
+} from 'src/utilities/model.helper';
 
 export const view: Partial<
   Record<ApplicationViews, Prisma.ApplicationsInclude>
@@ -274,7 +278,7 @@ export class ApplicationService {
     private emailService: EmailService,
     private permissionService: PermissionService,
     private geocodingService: GeocodingService,
-    private httpService: HttpService
+    private httpService: HttpService,
   ) {}
 
   /*
@@ -633,6 +637,8 @@ export class ApplicationService {
       }
     }
 
+    console.log('applicant', dto);
+
     const rawApplication = await this.prisma.applications.create({
       data: {
         ...dto,
@@ -760,8 +766,6 @@ export class ApplicationService {
       include: view.details,
     });
 
-    
-
     const mappedApplication = mapTo(Application, rawApplication);
     if (dto.applicant.emailAddress && forPublic) {
       this.emailService.applicationConfirmation(
@@ -770,26 +774,17 @@ export class ApplicationService {
         listing.jurisdictions?.publicUrl,
       );
     }
-    // Application is created, now we need to call the ML model to get the risk score
-    // Anonymous features are passed to the model
-    const features = {
-      income: parseFloat(dto.income?.replace(/[^0-9.]/g, '')) || 0,
-      household_size: dto.householdSize || 1,
-      housing_status: dto.housingStatus === 'homeless' ? 0 : dto.housingStatus === 'renting' ? 1 : 2,
-      income_vouchers: dto.incomeVouchers ? 1 : 0,
-      household_expecting_changes: dto.householdExpectingChanges ? 1 : 0,
-      household_student: dto.householdStudent ? 1 : 0,
-    };
-    
     try {
-      const response = await firstValueFrom(
-        this.httpService.post('http://localhost:5000/predict', { features })
+      // Use helper functions
+      const features = mapDtoToModelFeatures(dto);
+      mappedApplication.riskScore = await getModelPrediction(
+        this.httpService,
+        features,
       );
-      mappedApplication.riskScore = response.data.risk_score;
     } catch (error) {
-      console.error('Model service error:', error.message);
+      console.error('Risk score processing failed:', error);
+      // Handle fallback logic here
     }
-    
     // Update the lastApplicationUpdateAt to now after every submission
     await this.updateListingApplicationEditTimestamp(listing.id);
 
