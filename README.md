@@ -196,7 +196,15 @@ We adhere to **Conventional Commits**: https://www.conventionalcommits.org/en/v1
 
   <detailed description>
   ```
-- Types include: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+
+#### Types include:
+
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `refactor:` Code refactoring (no feature change)
+- `test:` Adding or updating tests
+- `chore:` Maintenance (build config, etc.)
 
 ### Pull Requests
 
