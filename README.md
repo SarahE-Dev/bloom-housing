@@ -17,7 +17,8 @@ Bloom is [Exygy](https://www.exygy.com/)’s affordable housing platform. Bloom'
 ![SASS](https://img.shields.io/badge/SASS-hotpink.svg?style-for-the-badge&logo=SASS&logoColor=white)
 ![Jest](https://img.shields.io/badge/-jest-%23C21325?style-for-the-badge&logo=jest&logoColor=white)
 ![Cypress](https://img.shields.io/badge/-cypress-%23E5E5E5?style-for-the-badge&logo=cypress&logoColor=058a5e)
-![Testing-Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style-for-the-badge&logo=testing-library&logoColor=white)
+![Testing Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style-for-the-badge&logo=testing-library&logoColor=white)
+
 
 Bloom consists of a client/server architecture using [Next.js](https://nextjs.org) for the frontend applications and [NestJS](https://nestjs.com), [Prisma](https://www.prisma.io/), and [Postgres](https://www.postgresql.org/) on the backend.
 
@@ -27,14 +28,14 @@ Bloom uses a monorepo-style repository containing multiple user-facing applicati
 
 ```
 bloom/
-├── api/                    # Backend services (NestJS, Prisma, Postgres)
-├── model/                  # Risk prediction microservice (Python, Flask, XGBoost)
-├── sites/                  # Frontend applications
-│   ├── public/             # Applicant-facing portal (Next.js)
-│   └── partners/           # Developer and admin portal (Next.js)
-├── shared-helpers/         # Shared types, functions, and components
-├── @bloom-housing/ui-seeds # Design system and React component library
-├── @bloom-housing/ui-components # Legacy component library (being phased out)
+├── api/                    # NestJS backend services
+├── model/                  # Risk prediction microservice (Flask, XGBoost)
+├── sites/
+│   ├── public/             # Next.js applicant-facing portal
+│   └── partners/           # Next.js developer/admin portal
+├── shared-helpers/         # Shared types and utilities
+├── @bloom-housing/ui-seeds # Design system and React components
+└── @bloom-housing/ui-components # Legacy React component library
 ```
 
 - **`sites/public`**: Applicant-facing site for browsing and applying to listings using Bloom’s Common Application or third-party applications. See [sites/public/README](https://github.com/bloom-housing/bloom/blob/main/sites/public/README.md).
@@ -45,17 +46,14 @@ bloom/
 - **`@bloom-housing/ui-seeds`**: Component library with React components and design system tokens. Explore the [Storybook](https://storybook-ui-seeds.netlify.app/?path=/story/tokens-introduction--page) and [design documentation](https://zeroheight.com/5e69dd4e1/p/938cb5-seeds-design-system).
 - **`@bloom-housing/ui-components`**: Legacy component library, being replaced by `ui-seeds`. View the [Storybook](https://storybook.bloom.exygy.dev/).
 
-## Getting Started for Developers
+## Getting Started
 
-If this is your first time working with Bloom, check the `sites/public`, `sites/partners`, `api`, and `model` README files for specific configuration details before proceeding with the setup instructions below.
+If you're new to Bloom, follow the individual README files in each package first:
 
-## Starting Locally
-
-### Dependencies
-
-Run `yarn install` at the root and from within the `api` directory.
-
-If you don’t have Yarn installed, install [Homebrew](https://brew.sh/) and run `brew install yarn`.
+- **api/**: [api/README.md](api/README.md)
+- **sites/public/**: [sites/public/README.md](sites/public/README.md)
+- **sites/partners/**: [sites/partners/README.md](sites/partners/README.md)
+- **model/**: [model/README.md](model/README.md)
 
 ### Local Environment Variables
 
@@ -72,165 +70,73 @@ Recommended extensions for VSCode:
 - [CSS Module Autocomplete](https://marketplace.visualstudio.com/items?itemName=clinyong.vscode-css-modules): Autocompletes CSS module files.
 - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python): Supports model development.
 
-### Running a Local Test Server
+## Local Development Setup
 
-Run `yarn dev:all` from the root to start three processes on different ports:
-
-- Public app: `http://localhost:3000`
-- Partners app: `http://localhost:3001`
-- API: `http://localhost:3100`
-
-Alternatively, run each process individually from separate terminals in `api`, `sites/public`, or `sites/partners` with `yarn dev`.
-
-### Risk Prediction Model
-
-The `model/app/` directory contains a Flask-based microservice powered by an XGBoost model to predict housing instability risk based on features like income, household size, housing status, income vouchers, household expecting changes, and household student status. It exposes a `/predict` endpoint and can be run standalone for local development or testing without requiring the full Bloom platform.
-
-#### Setup and Run Locally (Standalone)
-
-1. **Prerequisites**:
-
-   - Python 3.10+ ([python.org](https://www.python.org/downloads/)).
-   - pip (Python package manager).
-   - Git.
-   - Optional: Docker for containerized runs, Minikube and kubectl for Kubernetes.
-
-2. **Set Up Virtual Environment**:
-
+1. **Install Dependencies**
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: venv\Scripts\activate
+   yarn install
+   cd api && yarn install
    ```
+   If you don’t have Yarn installed, install [Homebrew](https://brew.sh/) and run `brew install yarn`.
 
-3. **Install Dependencies**:
-   Install required Python libraries (e.g., flask, xgboost, pandas, numpy):
+2. **Environment Variables**
+   Copy `.env.template` to `.env` in each of `sites/public`, `sites/partners`, `api`, and `model`, then fill in any required secrets.
 
+3. **Run Everything**
    ```bash
+   yarn dev:all
+   ```
+   This starts:
+   - Public: http://localhost:3000
+   - Partners: http://localhost:3001
+   - API: http://localhost:3100
+
+
+
+## Risk Prediction Model (model/)
+
+The `model/app/` directory contains a Flask-based microservice powered by an XGBoost model to predict housing instability risk. It exposes a `/predict` endpoint and can be run standalone for local development or testing without requiring the full Bloom platform.
+
+### New Data & Training Workflow
+
+1. **Download AHS 2023 Data**
+   - Go to: https://www.census.gov/.../ahs-2023-national-public-use-file--puf-.html
+   - Download the **AHS 2023 National PUF v1.1 CSV** zip and extract the CSV into `model/data/`.
+
+2. **Install Python Dependencies**
+   ```bash
+   cd model
+   python -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt
    ```
 
-4. **Train the Model**:
-   Generate synthetic training data and save the trained model to `app/mock-model.pkl`:
-
+3. **Run Pipeline**
    ```bash
-   python utils/train_model.py
+   python pipeline/data_processing.py
+   python pipeline/model_training.py
    ```
+   - Outputs `model/app/xgboost_model.pkl` and `model/app/scaler.pkl`.
 
-5. **Run the Flask Microservice**:
-   Start the Flask API server:
-
+4. **Start Flask Service**
    ```bash
-   cd app
-   python main.py
+   python app/main.py
    ```
 
-   The service will be available at `http://localhost:5000/predict`.
-
-6. **Test the API**:
-   In another terminal from the `model/` directory, send a test request to the `/predict` endpoint:
-
+5. **Testing**
    ```bash
-   python utils/test_prediction.py
+   # Local Flask tests
+   pytest tests/test_prediction.py
    ```
 
-   Alternatively, use `curl` or Postman:
+### Docker Usage
 
-   ```bash
-   curl -X POST http://localhost:5000/predict \
-     -H "Content-Type: application/json" \
-     -d '{"features": {"income": 1800, "household_size": 3, "housing_status": 1, "income_vouchers": true, "household_expecting_changes": false, "household_student": true}}'
-   ```
-
-   Expected response:
-
-   ```json
-   {
-     "risk_score": 0.82,
-     "message": "Risk score represents likelihood of becoming unhoused (0 to 1, higher is riskier)"
-   }
-   ```
-
-7. **Folder Structure**:
-
-   ```
-    model/
-    ├── app/
-    │   ├── Dockerfile           # Model container setup
-    │   ├── main.py              # Flask app with /predict endpoint
-    │   ├── mock-model.pkl       # Mock XGBoost model (generated by utils/train_model.py)
-    │   └── requirements.txt     # Specific requirements for prediction container
-    │
-    ├── assets/                            # Images used in docs or README
-    │   ├── browser-console.png            # Screenshot showing prediction in browser console
-    │   ├── microservice-flow.png          # Diagram showing how data flows through the system
-    │   ├── risk_microservice_system_design_diagram.png # Diagram showing architecture of the system
-    │   └── test-console.png               # Screenshot of test run in the terminal
-    |
-    ├── docs/                              # Project documentation
-    |   └── developer_guide.md             # Guide for developers working on this service
-    │
-    ├── notebooks/
-    │   ├── 1-ahs_dataset_formatting.ipynb      # Initial data cleaning and feature engineering on AHS'23 Dataset
-    │   └── 2-model_selection.ipynb             # Model selection, experimentation, and explainability using AHS'23 Dataset
-    |
-    ├── utils/
-    │   ├── test_prediction.py        # Sends test POST request to /predict endpoint
-    │   └── train_model.py            # Script to generate training data and save mock-model.pkl
-    │
-    ├── docker-compose.yaml      # Builds and sets up container environment
-    ├── requirements.txt         # Python dependencies (All container dependencies)
-    └── README.md                # You’re here!
-   ```
-
-8. **Troubleshooting**:
-   - **Module Not Found**: Run `pip install -r requirements.txt`.
-   - **Port Conflict**: If port 5000 is in use, update the port in `app/main.py`.
-   - **Model File Missing**: Run `python utils/train_model.py` to generate `app/mock-model.pkl`.
-   - **API Errors**: Check server logs or see model/README.
-
-## 🐳 Running with Docker
-
-1. **Build and Run the container**:
-
-   ```bash
-   docker compose up --build
-   ```
-
-   **NOTE:** You can drop the `--build` flag after the initial build to run the containers. If any changes are made, include it to rebuild the containers with the additions included.
-
-2. **Test the endpoint**:
-
-   ```bash
-   python utils/test_prediction.py
-   ```
-
-#### Prediction API
-
-- **Endpoint**: `POST /predict`
-- **Purpose**: Returns a risk score (0 to 1, higher is riskier) based on housing-related features.
-- **Example Request**:
-  ```json
-  {
-    "features": {
-      "income": 1800,
-      "household_size": 3,
-      "housing_status": 1,
-      "income_vouchers": true,
-      "household_expecting_changes": false,
-      "household_student": true
-    }
-  }
-  ```
-  Note: `housing_status` is numeric (e.g., 0: homeless, 1: renting, 2: stable).
-- **Example Response**:
-  ```json
-  {
-    "risk_score": 0.82,
-    "message": "Risk score represents likelihood of becoming unhoused (0 to 1, higher is riskier)"
-  }
-  ```
-
-For integration with Bloom’s NestJS backend, configure the `application-service` in `api/` to call `http://localhost:5000/predict`. See [model/README](https://github.com/bloom-housing/bloom/blob/main/model/README.md) for further details.
+```bash
+cd model
+docker-compose up --build
+# Local tests
+pytest tests/test_prediction.py
+```
 
 ## Bloom UIC Development
 
@@ -256,14 +162,6 @@ Because Bloom’s `ui-components` package is a separate open-source repository, 
 4. Run Bloom locally with `yarn dev:all`.
    Bloom will use the published `@bloom-housing/ui-components` version specified in `package.json`.
 
-## Contributing
-
-Contributions to Bloom’s applications and services are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
-
-### Issue Tracking
-
-Development tasks are managed via [GitHub Issues](https://github.com/bloom-housing/bloom/issues). Submit issues even if you don’t plan to implement them. Check for existing issues before creating new ones, and provide detailed descriptions with screenshots. Contact the Bloom team (@ludtkemorgan, @emilyjablonski, @yazeedloonat) before starting work to avoid duplication.
-
 ### Committing
 
 Bloom uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages. On commit, linting and conventional commit verification run automatically. Use one of these methods:
@@ -271,6 +169,47 @@ Bloom uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/
 - Install [Commitizen](https://commitizen.github.io/cz-cli/) (`npm install -g commitizen`) and run `git cz` for a CLI to build commit messages.
 - Run `git commit` with a message following the conventional standard; the linter will fail if it doesn’t comply.
 
+
+
+### Issue Tracking
+
+- Development tasks are managed via [GitHub Issues](https://github.com/bloom-housing/bloom/issues).
+- Submit issues even if you don’t plan to implement them.
+- Check for existing issues before creating new ones, and provide detailed descriptions with screenshots.
+- Contact the Bloom team (@ludtkemorgan, @emilyjablonski, @yazeedloonat) before starting work to avoid duplication.
+
+### Committing
+
+We adhere to **Conventional Commits**: https://www.conventionalcommits.org/en/v1.0.0/
+
+- Install [Commitizen](https://commitizen.github.io/cz-cli/) globally:
+  ```bash
+  npm install -g commitizen
+  ```
+- Run `git cz` to generate well-formed commit messages, or write your own following the format:
+  ```text
+  <type>(<scope>): <short summary>
+
+  <detailed description>
+  ```
+- Types include: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+
 ### Pull Requests
 
-Open pull requests to the `main` branch. Complete the PR template, including issue links, PR description, reviewer testing instructions, and a testing checklist. Label PRs as `needs review(s)` when ready or `wip` if in progress. Reviewers should provide clear next steps: mark “Requested Changes” for further work or “Approved” for minor changes not requiring re-review, with comments on remaining tasks.
+- Target the `main` branch.
+- Include the PR template with:
+  - Issue reference (e.g., `Closes #123`).
+  - Description of changes.
+  - Testing instructions for reviewers.
+  - A checklist of completed tasks.
+- Label PRs appropriately:
+  - `needs review(s)` when ready for review.
+  - `wip` for work in progress.
+- Reviewers:
+  - Mark “Requested Changes” if further work is needed, or “Approved” when ready to merge.
+
+## License
+
+MIT License
+
+
