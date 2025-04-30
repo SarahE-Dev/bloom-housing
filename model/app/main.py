@@ -125,20 +125,33 @@ def predict_endpoint():
         missing = [f for f in required if f not in data]
         if missing:
             return jsonify({'error': f"Missing fields: {missing}"}), 400
+
+        # Validate and parse inputs
         age = int(data['age'])
         income = float(data['income'])
         veteran = bool(data['veteran'])
         benefits = bool(data['benefits'])
-        threshold = float(data.get('threshold', 0.5))
+
+        # Validate threshold
+        threshold = data.get('threshold', 0.5)
+        try:
+            threshold = float(threshold)
+            if not (0 <= threshold <= 1):
+                raise ValueError("Threshold must be between 0 and 1.")
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid threshold: must be a number between 0 and 1'}), 400
+
         df = prepare_features(age, income, veteran, benefits)
         result = predict_risk(model, scaler, df, threshold)
         return jsonify(result)
+
     except ValueError as ve:
         logger.error(f"Invalid input types: {ve}")
         return jsonify({'error': 'Invalid input types'}), 400
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         return jsonify({'error': 'Prediction error'}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
