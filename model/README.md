@@ -179,7 +179,7 @@ pytest tests/test_prediction.py
 
 ## 📄 Contribution Guidelines
 
-Contributions to Bloom’s applications and services are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
+Contributions are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
 
 1. Fork and clone the repo
 2. Create a feature branch:  
