@@ -91,7 +91,7 @@ Recommended extensions for VSCode:
    - Partners: http://localhost:3001
    - API: http://localhost:3100
 
-
+Alternatively, run each process individually from separate terminals in `api`, `sites/public`, or `sites/partners` with `yarn dev`.
 
 ## Risk Prediction Model (model/)
 
@@ -162,14 +162,9 @@ Because Bloom’s `ui-components` package is a separate open-source repository, 
 4. Run Bloom locally with `yarn dev:all`.
    Bloom will use the published `@bloom-housing/ui-components` version specified in `package.json`.
 
-### Committing
+##Contributing
 
-Bloom uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages. On commit, linting and conventional commit verification run automatically. Use one of these methods:
-
-- Install [Commitizen](https://commitizen.github.io/cz-cli/) (`npm install -g commitizen`) and run `git cz` for a CLI to build commit messages.
-- Run `git commit` with a message following the conventional standard; the linter will fail if it doesn’t comply.
-
-
+Contributions to Bloom’s applications and services are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
 
 ### Issue Tracking
 
