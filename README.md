@@ -162,9 +162,18 @@ Because Bloom’s `ui-components` package is a separate open-source repository, 
 4. Run Bloom locally with `yarn dev:all`.
    Bloom will use the published `@bloom-housing/ui-components` version specified in `package.json`.
 
-##Contributing
+## 📄 Contribution Guidelines
 
 Contributions to Bloom’s applications and services are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
+
+1. Fork and clone the repo
+2. Create a feature branch:  
+   `git checkout -b feature/improve-validation`
+3. Code your change
+4. Write/update tests
+5. Commit with a [conventional commit](https://www.conventionalcommits.org/)
+6. Push and open a Pull Request to `develop`
+7. Tag maintainers for review
 
 ### Issue Tracking
 
