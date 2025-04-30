@@ -177,6 +177,65 @@ pytest tests/test_prediction.py
 
 ---
 
+## 📄 Contribution Guidelines
+
+Contributions to Bloom’s applications and services are welcomed. To meet quality and maintainability goals, contributors must follow these guidelines:
+
+1. Fork and clone the repo
+2. Create a feature branch:  
+   `git checkout -b feature/improve-validation`
+3. Code your change
+4. Write/update tests
+5. Commit with a [conventional commit](https://www.conventionalcommits.org/)
+6. Push and open a Pull Request to `develop`
+7. Tag maintainers for review
+
+### Issue Tracking
+
+- Development tasks are managed via [GitHub Issues](https://github.com/SarahE-Dev/bloom-housing/issues).
+- Submit issues even if you don’t plan to implement them.
+- Check for existing issues before creating new ones, and provide detailed descriptions with screenshots.
+- Contact the Team 4 before starting work to avoid duplication.
+
+### Committing
+
+We adhere to **Conventional Commits**: https://www.conventionalcommits.org/en/v1.0.0/
+
+- Install [Commitizen](https://commitizen.github.io/cz-cli/) globally:
+  ```bash
+  npm install -g commitizen
+  ```
+- Run `git cz` to generate well-formed commit messages, or write your own following the format:
+  ```text
+  <type>(<scope>): <short summary>
+
+  <detailed description>
+  ```
+
+#### Types include:
+
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `refactor:` Code refactoring (no feature change)
+- `test:` Adding or updating tests
+- `chore:` Maintenance (build config, etc.)
+
+### Pull Requests
+
+- Target the `main` branch.
+- Include the PR template with:
+  - Issue reference (e.g., `Closes #123`).
+  - Description of changes.
+  - Testing instructions for reviewers.
+  - A checklist of completed tasks.
+- Label PRs appropriately:
+  - `needs review(s)` when ready for review.
+  - `wip` for work in progress.
+- Reviewers:
+  - Mark “Requested Changes” if further work is needed, or “Approved” when ready to merge.
+---
+
 ## 🙌 Acknowledgements
 
 - Created as part of the [Bloom Housing](https://github.com/bloom-housing/bloom) initiative
