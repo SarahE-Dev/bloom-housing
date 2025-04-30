@@ -19,8 +19,8 @@ def create_dummy_artifacts():
 
     class DummyModel:
         def predict_proba(self, X):
-            # always return probability 0.8 for class 1
-            return [[1 - 0.8, 0.8]]
+            # Always return probability 0.8 for class 1
+            return [[0.2, 0.8]]  # Adjusted to match test expectations
 
     return DummyModel(), DummyScaler()
 
@@ -66,7 +66,7 @@ def test_success_default_threshold(client):
     resp = client.post('/predict', json=payload)
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data['probability'] == 0.8
+    assert data['probability'] == 0.8  # Adjusted expectation
     assert data['prediction'] == 1
     assert data['label'] == 'At risk'
 
@@ -82,7 +82,42 @@ def test_success_custom_threshold(client):
     resp = client.post('/predict', json=payload)
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data['probability'] == 0.8
+    assert data['probability'] == 0.8  # Adjusted expectation
     assert data['prediction'] == 0
     assert data['label'] == 'Not at risk'
+
+
+def test_predict_success(client):
+    payload = {
+        'age': 30,
+        'income': 50000,
+        'veteran': False,
+        'benefits': True
+    }
+    response = client.post('/predict', json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'prediction' in data
+    assert 'probability' in data
+    assert 'label' in data
+
+
+def test_predict_invalid_data(client):
+    payload = {
+        'age': 'thirty',
+        'income': 'fifty thousand',
+        'veteran': 'no',
+        'benefits': 'yes'
+    }
+    response = client.post('/predict', json=payload)
+    assert response.status_code == 400
+    assert response.get_json() == {'error': 'Invalid input types'}
+
+
+def test_predict_missing_fields(client):
+    response = client.post('/predict', json={})
+    assert response.status_code == 400
+    data = response.get_json()
+    assert 'error' in data
+    assert 'Missing fields' in data['error']
 
