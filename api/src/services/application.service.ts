@@ -639,95 +639,97 @@ export class ApplicationService {
 
     console.log('applicant', dto);
 
+    const { predictRisk, ...applicationData } = dto;
+
     const rawApplication = await this.prisma.applications.create({
       data: {
-        ...dto,
+        ...applicationData,
         confirmationCode: this.generateConfirmationCode(),
-        applicant: dto.applicant
+        applicant: applicationData.applicant
           ? {
               create: {
-                ...dto.applicant,
+                ...applicationData.applicant,
                 applicantAddress: {
                   create: {
-                    ...dto.applicant.applicantAddress,
+                    ...applicationData.applicant.applicantAddress,
                   },
                 },
                 applicantWorkAddress: {
                   create: {
-                    ...dto.applicant.applicantWorkAddress,
+                    ...applicationData.applicant.applicantWorkAddress,
                   },
                 },
-                firstName: dto.applicant.firstName?.trim(),
-                lastName: dto.applicant.lastName?.trim(),
-                birthDay: dto.applicant.birthDay
-                  ? Number(dto.applicant.birthDay)
+                firstName: applicationData.applicant.firstName?.trim(),
+                lastName: applicationData.applicant.lastName?.trim(),
+                birthDay: applicationData.applicant.birthDay
+                  ? Number(applicationData.applicant.birthDay)
                   : undefined,
-                birthMonth: dto.applicant.birthMonth
-                  ? Number(dto.applicant.birthMonth)
+                birthMonth: applicationData.applicant.birthMonth
+                  ? Number(applicationData.applicant.birthMonth)
                   : undefined,
-                birthYear: dto.applicant.birthYear
-                  ? Number(dto.applicant.birthYear)
+                birthYear: applicationData.applicant.birthYear
+                  ? Number(applicationData.applicant.birthYear)
                   : undefined,
               },
             }
           : undefined,
-        accessibility: dto.accessibility
+        accessibility: applicationData.accessibility
           ? {
               create: {
-                ...dto.accessibility,
+                ...applicationData.accessibility,
               },
             }
           : undefined,
-        alternateContact: dto.alternateContact
+        alternateContact: applicationData.alternateContact
           ? {
               create: {
-                ...dto.alternateContact,
+                ...applicationData.alternateContact,
                 address: {
                   create: {
-                    ...dto.alternateContact.address,
+                    ...applicationData.alternateContact.address,
                   },
                 },
               },
             }
           : undefined,
-        applicationsAlternateAddress: dto.applicationsAlternateAddress
+        applicationsAlternateAddress: applicationData.applicationsAlternateAddress
           ? {
               create: {
-                ...dto.applicationsAlternateAddress,
+                ...applicationData.applicationsAlternateAddress,
               },
             }
           : undefined,
-        applicationsMailingAddress: dto.applicationsMailingAddress
+        applicationsMailingAddress: applicationData.applicationsMailingAddress
           ? {
               create: {
-                ...dto.applicationsMailingAddress,
+                ...applicationData.applicationsMailingAddress,
               },
             }
           : undefined,
-        listings: dto.listings
+        listings: applicationData.listings
           ? {
               connect: {
-                id: dto.listings.id,
+                id: applicationData.listings.id,
               },
             }
           : undefined,
-        demographics: dto.demographics
+        demographics: applicationData.demographics
           ? {
               create: {
-                ...dto.demographics,
+                ...applicationData.demographics,
               },
             }
           : undefined,
-        preferredUnitTypes: dto.preferredUnitTypes
+        preferredUnitTypes: applicationData.preferredUnitTypes
           ? {
-              connect: dto.preferredUnitTypes.map((unitType) => ({
+              connect: applicationData.preferredUnitTypes.map((unitType) => ({
                 id: unitType.id,
               })),
             }
           : undefined,
-        householdMember: dto.householdMember
+        householdMember: applicationData.householdMember
           ? {
-              create: dto.householdMember.map((member) => ({
+              create: applicationData.householdMember.map((member) => ({
                 ...member,
                 sameAddress: member.sameAddress || YesNoEnum.no,
                 workInRegion: member.workInRegion || YesNoEnum.no,
@@ -753,8 +755,8 @@ export class ApplicationService {
               })),
             }
           : undefined,
-        programs: dto.programs as unknown as Prisma.JsonArray,
-        preferences: dto.preferences as unknown as Prisma.JsonArray,
+        programs: applicationData.programs as unknown as Prisma.JsonArray,
+        preferences: applicationData.preferences as unknown as Prisma.JsonArray,
         userAccounts: requestingUser
           ? {
               connect: {
@@ -766,6 +768,7 @@ export class ApplicationService {
       include: view.details,
     });
 
+
     const mappedApplication = mapTo(Application, rawApplication);
     if (dto.applicant.emailAddress && forPublic) {
       this.emailService.applicationConfirmation(
@@ -774,16 +777,21 @@ export class ApplicationService {
         listing.jurisdictions?.publicUrl,
       );
     }
-    try {
-      // Use helper functions
-      const features = mapDtoToModelFeatures(dto);
-      mappedApplication.riskScore = await getModelPrediction(
-        this.httpService,
-        features,
-      );
-    } catch (error) {
-      console.error('Risk score processing failed:', error);
-      // Handle fallback logic here
+    if (dto.predictRisk) {
+      try {
+        // Use helper functions
+        const features = mapDtoToModelFeatures(dto);
+        mappedApplication.riskScore = await getModelPrediction(
+          this.httpService,
+          features,
+        );
+        
+        console.log(`Risk score calculated for application ${mappedApplication.id}: ${mappedApplication.riskScore}`);
+      } catch (error) {
+        console.error('Risk score processing failed:', error);
+      }
+    } else {
+      console.log(`Risk prediction skipped for application ${mappedApplication.id} as per user preference`);
     }
     // Update the lastApplicationUpdateAt to now after every submission
     await this.updateListingApplicationEditTimestamp(listing.id);
