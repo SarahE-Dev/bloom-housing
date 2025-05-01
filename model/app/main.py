@@ -51,24 +51,37 @@ def load_artifacts(model_path, scaler_path):
     return model, scaler
 
 # Prepare applicant features
-def prepare_features(age, income, veteran, benefits):
+def prepare_features(age, income, veteran, benefits,
+                     adult_kids: int = 0,
+                     disabled: bool = False):
+    """
+    adult_kids: number of adult children (default 0)
+    disabled:    whether someone in household is disabled (default False)
+    """
     raw = {
         "AGE": age,
         "HINCP": income,
-        "HHADLTKIDS": 0,            # default
-        "DISHH": 0,                 # assume no disabled
+        "HHADLTKIDS": adult_kids,
+        # DISHH: 1 = yes, 2 = no
+        "DISHH": 1 if disabled else 2,
         "MILHH": 2 if veteran else 6,
         "FS": 1 if benefits else 0,
         "PAP": 0,
     }
+
+    # start with all zeros
     feat = {f: 0 for f in FEATURE_ORDER}
     feat["AGE"] = raw["AGE"]
     feat["HINCP"] = raw["HINCP"]
     feat["HHADLTKIDS"] = raw["HHADLTKIDS"]
+
+    # disabled one-hot
     if raw["DISHH"] == 1:
         feat["disabled_person_in_household_yes"] = 1
     else:
         feat["disabled_person_in_household_no"] = 1
+
+    # military one-hot
     mil_map = {
         1: "military_1person_active",
         2: "military_1person_veteran",
@@ -77,11 +90,14 @@ def prepare_features(age, income, veteran, benefits):
         5: "military_2plus_mix_active_veterans",
         6: "military_no_service",
     }
-    feat[mil_map.get(raw["MILHH"])] = 1
+    feat[mil_map[raw["MILHH"]]] = 1
+
+    # government assistance one-hot
     if raw["FS"] == 1 or raw["PAP"] > 0:
         feat["government_assistance"] = 1
     else:
         feat["no_government_assistance"] = 1
+
     df = pd.DataFrame([feat], columns=FEATURE_ORDER)
     return df
 
@@ -95,6 +111,7 @@ def predict_risk(model, scaler, df, threshold=0.5):
     except Exception as e:
         logger.error(f"Error aligning features for scaler: {e}")
         raise
+
     X_scaled = scaler.transform(X)
     prob = model.predict_proba(X_scaled)[0][1]
     pred = int(prob >= threshold)
@@ -126,28 +143,41 @@ def predict_endpoint():
         if missing:
             return jsonify({'error': f"Missing fields: {missing}"}), 400
 
-        # Validate and parse inputs
-        age = int(data['age'])
-        income = float(data['income'])
-        veteran = bool(data['veteran'])
-        benefits = bool(data['benefits'])
+        # 1) age & income must parse to int/float
+        try:
+            age = int(data['age'])
+            income = float(data['income'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid input types'}), 400
 
-        # Validate threshold
+        # 2) veteran & benefits must be real booleans
+        if not isinstance(data['veteran'], bool) or not isinstance(data['benefits'], bool):
+            return jsonify({'error': 'Invalid input types'}), 400
+        veteran = data['veteran']
+        benefits = data['benefits']
+
+        # 3) optional fields
+        adult_kids = int(data.get('adult_kids', 0))
+        disabled   = bool(data.get('disabled', False))
+
+        # 4) threshold validity
         threshold = data.get('threshold', 0.5)
         try:
             threshold = float(threshold)
             if not (0 <= threshold <= 1):
-                raise ValueError("Threshold must be between 0 and 1.")
+                raise ValueError()
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid threshold: must be a number between 0 and 1'}), 400
 
-        df = prepare_features(age, income, veteran, benefits)
+        # 5) build features & predict
+        df = prepare_features(
+            age, income, veteran, benefits,
+            adult_kids=adult_kids,
+            disabled=disabled
+        )
         result = predict_risk(model, scaler, df, threshold)
         return jsonify(result)
 
-    except ValueError as ve:
-        logger.error(f"Invalid input types: {ve}")
-        return jsonify({'error': 'Invalid input types'}), 400
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         return jsonify({'error': 'Prediction error'}), 500
@@ -155,3 +185,4 @@ def predict_endpoint():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+    logger.info("Starting Flask app...")

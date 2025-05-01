@@ -1,171 +1,147 @@
 import os
-import sys
 import pytest
-import json
 import requests
 
-# Ensure project root is on PYTHONPATH so that `app` package can be imported
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Base URL of your running Flask service
+BASE_URL = os.getenv("API_URL", "http://127.0.0.1:5000")
+ENDPOINT = f"{BASE_URL}/predict"
 
-# Import Flask app and relevant objects from your application
-import app.main as app_module
-from app.main import app as flask_app, FEATURE_ORDER
 
-# Helper to create dummy artifacts
-def create_dummy_artifacts():
-    class DummyScaler:
-        feature_names_in_ = FEATURE_ORDER
-        def transform(self, X):
-            return X  # no scaling
+def assert_valid_response(resp, threshold=0.5):
+    # Must be HTTP 200
+    assert resp.status_code == 200, f"{resp.status_code} / {resp.text}"
+    data = resp.json()
+    # Keys present
+    assert set(data) >= {"probability", "prediction", "label"}
+    prob = data["probability"]
+    pred = data["prediction"]
+    label = data["label"]
 
-    class DummyModel:
-        def predict_proba(self, X):
-            # Always return probability 0.8 for class 1
-            return [[0.2, 0.8]]  # Adjusted to match test expectations
+    # Probability is between 0 and 1
+    assert isinstance(prob, (float, int))
+    assert 0.0 <= prob <= 1.0
 
-    return DummyModel(), DummyScaler()
+    # Prediction is 0 or 1
+    assert pred in (0, 1)
 
-@pytest.fixture
-def client(monkeypatch):
-    # Monkey-patch the real model & scaler in the app_module
-    dummy_model, dummy_scaler = create_dummy_artifacts()
-    monkeypatch.setattr(app_module, 'model', dummy_model)
-    monkeypatch.setattr(app_module, 'scaler', dummy_scaler)
+    # Prediction matches threshold
+    expected_pred = 1 if prob >= threshold else 0
+    assert pred == expected_pred
 
-    # Provide Flask test client
-    with flask_app.test_client() as client:
-        yield client
+    # Label matches prediction
+    expected_label = "At risk" if pred else "Not at risk"
+    assert label == expected_label
 
-# Unit Tests
 
-def test_missing_fields(client):
-    resp = client.post('/predict', json={})
+# 1) Missing required fields → 400
+def test_missing_required_fields():
+    resp = requests.post(ENDPOINT, json={})
     assert resp.status_code == 400
-    data = resp.get_json()
-    assert 'error' in data
-    assert 'Missing fields' in data['error']
+    assert "Missing fields" in resp.json().get("error", "")
 
-def test_invalid_types(client):
-    payload = {
-        'age': 'thirty',
-        'income': 'fifty thousand',
-        'veteran': 'no',
-        'benefits': 'yes'
-    }
-    resp = client.post('/predict', json=payload)
+
+# 2) Invalid types for each required field → 400
+@pytest.mark.parametrize("payload", [
+    {"age": "a", "income": 10000, "veteran": False, "benefits": True},
+    {"age": 30, "income": "x", "veteran": False, "benefits": True},
+    {"age": 30, "income": 10000, "veteran": "no", "benefits": True},
+    {"age": 30, "income": 10000, "veteran": False, "benefits": "yes"},
+])
+def test_invalid_required_types(payload):
+    resp = requests.post(ENDPOINT, json=payload)
     assert resp.status_code == 400
-    assert resp.get_json() == {'error': 'Invalid input types'}
+    assert resp.json() == {"error": "Invalid input types"}
 
-def test_success_default_threshold(client):
+
+# 3) Invalid threshold values → 400
+@pytest.mark.parametrize("bad_thresh", [-0.1, 1.1, "foo", None])
+def test_invalid_threshold(bad_thresh):
     payload = {
-        'age': 30,
-        'income': 50000,
-        'veteran': False,
-        'benefits': True
+        "age": 30,
+        "income": 50000,
+        "veteran": True,
+        "benefits": False,
+        "threshold": bad_thresh
     }
-    resp = client.post('/predict', json=payload)
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert data['probability'] == 0.8  
-    assert data['prediction'] == 1
-    assert data['label'] == 'At risk'
+    resp = requests.post(ENDPOINT, json=payload)
+    assert resp.status_code == 400
+    assert "Invalid threshold" in resp.json().get("error", "")
 
-def test_success_custom_threshold(client):
+
+# 4) Default threshold (0.5) → valid response
+def test_default_threshold():
+    payload = {"age": 50, "income": 20000, "veteran": False, "benefits": True}
+    resp = requests.post(ENDPOINT, json=payload)
+    assert_valid_response(resp, threshold=0.5)
+
+
+# 5) Custom threshold above/below probability
+def test_custom_threshold_logic():
+    # threshold below 0.5 should still succeed
+    p1 = requests.post(ENDPOINT, json={
+        "age": 50, "income": 20000, "veteran": False, "benefits": True,
+        "threshold": 0.1
+    })
+    assert_valid_response(p1, threshold=0.1)
+
+    # threshold high should flip prediction if prob< threshold
+    p2 = requests.post(ENDPOINT, json={
+        "age": 50, "income": 20000, "veteran": False, "benefits": True,
+        "threshold": 0.99
+    })
+    assert_valid_response(p2, threshold=0.99)
+
+
+# 6) Optional: adult_kids only
+def test_with_adult_kids_only():
     payload = {
-        'age': 30,
-        'income': 50000,
-        'veteran': False,
-        'benefits': True,
-        'threshold': 0.9
+        "age": 40, "income": 30000,
+        "veteran": True, "benefits": False,
+        "adult_kids": 3
     }
-    resp = client.post('/predict', json=payload)
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert data['probability'] == 0.8 
-    assert data['prediction'] == 0
-    assert data['label'] == 'Not at risk'
+    resp = requests.post(ENDPOINT, json=payload)
+    assert_valid_response(resp)
 
-def test_predict_invalid_data(client):
+
+# 7) Optional: disabled only
+def test_with_disabled_only():
     payload = {
-        'age': 'thirty',
-        'income': 'fifty thousand',
-        'veteran': 'no',
-        'benefits': 'yes'
+        "age": 40, "income": 30000,
+        "veteran": True, "benefits": False,
+        "disabled": True
     }
-    response = client.post('/predict', json=payload)
-    assert response.status_code == 400
-    assert response.get_json() == {'error': 'Invalid input types'}
-
-def test_predict_missing_fields(client):
-    response = client.post('/predict', json={})
-    assert response.status_code == 400
-    data = response.get_json()
-    assert 'error' in data
-    assert 'Missing fields' in data['error']
+    resp = requests.post(ENDPOINT, json=payload)
+    assert_valid_response(resp)
 
 
-# Real HTTP request tests (integration tests)
-
-def test_predict_with_requests():
+# 8) Both optional fields present
+def test_with_both_optionals():
     payload = {
-        'age': 30,
-        'income': 50000,
-        'veteran': False,
-        'benefits': True
+        "age": 40, "income": 30000,
+        "veteran": False, "benefits": True,
+        "adult_kids": 2, "disabled": False
     }
+    resp = requests.post(ENDPOINT, json=payload)
+    assert_valid_response(resp)
 
-    # Make a real HTTP request to the Flask app
-    response = requests.post('http://127.0.0.1:5000/predict', json=payload)
 
-    # Check the status code and response data
-    assert response.status_code == 200
-    data = response.json()
-    assert 'probability' in data
-    assert 'prediction' in data
-    assert 'label' in data
-
-def test_predict_invalid_types_with_requests():
+# 9) Extra fields should be ignored
+def test_ignores_extra_fields():
     payload = {
-        'age': 'thirty',
-        'income': 'fifty thousand',
-        'veteran': 'no',
-        'benefits': 'yes'
+        "age": 30, "income": 50000,
+        "veteran": False, "benefits": True,
+        "foo": "bar", "baz": 123
     }
+    resp = requests.post(ENDPOINT, json=payload)
+    assert_valid_response(resp)
 
-    # Make a real HTTP request to the Flask app
-    response = requests.post('http://127.0.0.1:5000/predict', json=payload)
 
-    # Check the status code and response data
-    assert response.status_code == 400
-    data = response.json()
-    assert 'error' in data
-    assert 'Invalid input types' in data['error']
-
-def test_predict_missing_fields_with_requests():
-    # Send an empty payload to trigger the missing fields error
-    response = requests.post('http://127.0.0.1:5000/predict', json={})
-
-    # Check the status code and response data
-    assert response.status_code == 400
-    data = response.json()
-    assert 'error' in data
-    assert 'Missing fields' in data['error']
-
-def test_predict_invalid_threshold_with_requests():
-    # Send a payload with an invalid threshold (e.g., a value > 1 or < 0)
+# 10) Numeric adult_kids casting
+def test_adult_kids_casting():
     payload = {
-        'age': 30,
-        'income': 50000,
-        'veteran': False,
-        'benefits': True,
-        'threshold': 1.5  # Invalid threshold
+        "age": 30, "income": 50000,
+        "veteran": False, "benefits": True,
+        "adult_kids": 2.7
     }
-
-    # Make a real HTTP request to the Flask app
-    response = requests.post('http://127.0.0.1:5000/predict', json=payload)
-
-    # Check the status code and response data
-    assert response.status_code == 400
-    data = response.json()
-    assert 'error' in data
-    assert 'Invalid threshold' in data['error']
+    resp = requests.post(ENDPOINT, json=payload)
+    assert_valid_response(resp)
