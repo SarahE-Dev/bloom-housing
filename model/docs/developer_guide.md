@@ -1,219 +1,207 @@
-# 🧑‍💻 Developer Guide — Housing Risk Prediction Microservice
+# 👩‍💻 Developer Guide: Housing Risk Prediction Microservice
 
-This guide provides key information for developers contributing to the `bloom-housing` risk prediction microservice. Whether you're fixing a bug, tweaking the model, or deploying with Kubernetes — this document has you covered.
-
----
-
-## 📁 Project Structure
-
-```
-model/
-├── app/                                 # Core Flask app code and serialized model
-│   ├── main.py                          # Defines the /predict endpoint and loads model
-│   └── model.pkl                        # Serialized XGBoost model for predictions
-├── assets/                              # Visual assets for documentation and system diagrams
-│   ├── browser-console.png              # Screenshot showing prediction in browser console
-│   ├── microservice-flow.png            # Diagram of end-to-end system flow
-│   ├── system_design_diagram_4_20_25.png # Architecture/system design visualization
-│   └── test-console.png                 # Screenshot of test_prediction.py script output
-├── docs/                                # Project documentation
-│   └── developer_guide.md               # Guide for contributors and developers
-├── utils/                               # Helper scripts for model training and testing
-│   ├── test_prediction.py               # Script to send test data to /predict endpoint
-│   └── train_model.py                   # Generates mock data and trains the XGBoost model
-├── .gitignore                           # Files/folders to exclude from version control
-├── deployment.yaml                      # Kubernetes deployment configuration for the microservice
-├── Dockerfile                           # Docker build config for containerizing the Flask service
-├── README.md                            # Overview, setup, and usage instructions
-├── requirements.txt                     # List of Python package dependencies
-└── service.yaml                         # Kubernetes service configuration to expose the app
-```
+Welcome to the developer guide for the **Housing Risk Prediction Microservice**, a Flask-based API that provides housing instability risk scores. This service is part of the [`bloom-housing`](https://github.com/SarahE-Dev/bloom-housing) monorepo.
 
 ---
 
-## ⚙️ Environment Setup
+## 📦 Overview
 
-### Required Tools
+This microservice exposes a `/predict` endpoint powered by an XGBoost model trained on U.S. Census housing data. It is designed to be consumed by the main NestJS backend and can run independently for testing and development.
 
-- Python 3.10+
-- Docker (optional, for containerized runs)
-- Minikube & kubectl (optional, for local K8s testing)
-- Git
-- VS Code or preferred IDE
+---
 
-### Setup Steps
+## 🧭 Key Components
+
+| Location | Purpose |
+|---------|---------|
+| `app/` | Contains the Flask app, Dockerfile, and model artifacts |
+| `pipeline/` | Scripts for data cleaning, processing, and model training |
+| `tests/` | pytest suite for validating the `/predict` endpoint |
+| `data/` | Place raw CSVs from the AHS dataset here |
+| `notebooks/` | Jupyter notebooks for EDA and experimentation |
+| `assets/` | Screenshots and visuals for documentation |
+| `docs/` | This guide and future documentation lives here |
+
+---
+
+## 🔧 Setup Instructions
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/SarahE-Dev/bloom-housing.git
 cd bloom-housing/model
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+```
+
+### 2. Set up your Python environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python utils/train_model.py
-cd app && python main.py
-```
-
-Test prediction:
-```bash
-python utils/test_prediction.py
 ```
 
 ---
 
-## 🧠 Model Overview
+## 📊 Data Processing & Model Training
 
-- **Algorithm**: XGBoost Classifier
-- **Inputs**: JSON-encoded application data
-- **Output**: Categorical risk score (0–1)
-- **Training**: Synthetic data via `utils/train_model.py`
-- **Serving**: Flask microservice
+### 1. Get the data
 
-To re-train:
+Download the **AHS 2023 National PUF v1.1 CSV** dataset:
+
+- 📎 [Download Link](https://www.census.gov/programs-surveys/ahs/data/2023/ahs-2023-public-use-file--puf-/ahs-2023-national-public-use-file--puf-.html)
+- Place the `.csv` file(s) in the `model/data/` folder without renaming.
+
+### 2. Run the pipeline
+
 ```bash
-python utils/train_model.py
+python pipeline/data_processing.py
+python pipeline/model_training.py
 ```
+
+- Artifacts will be saved to `app/` as:
+  - `xgboost_model.pkl`
+  - `scaler.pkl`
 
 ---
 
-## 🧪 Testing & Debugging
+## 🚀 Run the API
 
-Run test request:
+### Option 1: Locally with Flask
 
 ```bash
-python utils/test_prediction.py
+python app/main.py
 ```
 
-Add your own payload in the script to simulate real applications.
+This starts the server at `http://localhost:5000/predict`.
 
-### Logging
+### Option 2: With Docker
 
-All key actions and prediction steps are logged to console. Consider using Python’s built-in `logging` module for enhanced logging to file or external service (e.g., Sentry, Datadog).
+```bash
+docker compose up --build
+```
 
----
-
-## 🐛 Troubleshooting Common Issues
-
-| Error Message | Likely Cause | Fix |
-|---------------|--------------|-----|
-| `ModuleNotFoundError` | Missing dependency | Re-run `pip install -r requirements.txt` |
-| `model.pkl not found` | Model not trained | Run `python utils/train_model.py` |
-| `unhandledRejection: TypeError` | Issue with frontend/backend setup | Check API response formatting and Tailwind config |
-| CORS or network issues | Wrong endpoint or port | Ensure Flask is running on `localhost:5000` |
+If consumed by NestJS, be sure the service URL matches (`http://localhost:5000/predict` or internal Docker network name).
 
 ---
 
 ## 📡 API Reference
 
-### POST `/predict`
+### `POST /predict`
 
-Accepts a JSON payload with housing-related features. Returns a `risk_score`.
+#### Payload Format:
 
-See the [README.md](../README.md#prediction-api) for request/response examples.
-
----
-
-## 🔀 Branching & Workflow
-
-### 🏷️ Conventional Commits
-
-Use the [Conventional Commits](https://www.conventionalcommits.org/) format:
-
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `refactor:` Code refactoring (no feature change)
-- `test:` Adding or updating tests
-- `chore:` Maintenance (build config, etc.)
-
-### 📦 Branch Strategy
-
-- `main` – Stable, production-ready
-- `develop` – Active sprint work
-- `feature/*` – New features
-- `bugfix/*` – Fixes
-- `docs/*` – Documentation updates
-
----
-
-## 📄 Contribution Guidelines
-
-1. Fork and clone the repo
-2. Create a feature branch:  
-   `git checkout -b feature/improve-validation`
-3. Code your change
-4. Write/update tests
-5. Commit with a [conventional commit](https://www.conventionalcommits.org/)
-6. Push and open a Pull Request to `develop`
-7. Tag maintainers for review
-
----
-
-## 📈 Model Lifecycle Management
-
-### When to Retrain
-
-- Input schema changes
-- Model logic or features change
-- You integrate real-world data
-
-### Steps
-
-```bash
-python utils/train_model.py
-# Replace model.pkl in /app/
+```json
+{
+  "age": 30,
+  "income": 50000,
+  "veteran": false,
+  "benefits": true,
+  "threshold": 0.5
+}
 ```
 
-Version models in `model_vX.pkl` format if needed.
+#### Sample Response:
 
----
-
-## 🔒 Security & Privacy
-
-This project avoids PII — inputs are limited to anonymized, synthetic features. If you intend to integrate real data, ensure compliance with local privacy laws (e.g., GDPR, HIPAA).
-
----
-
-## ☁️ Deployment Notes
-
-### Docker
-
-```bash
-docker build -t housing-service .
-docker run -p 5000:5000 housing-service
+```json
+{
+  "prediction": 1,
+  "probability": 0.8234,
+  "label": "At risk"
+}
 ```
 
-### Kubernetes (Minikube)
+- `threshold` is optional; default is `0.5`.
+
+---
+
+## 🧪 Testing
+
+### Manual test:
 
 ```bash
-minikube start
-eval $(minikube docker-env)
-docker build -t housing-service .
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-kubectl port-forward housing-service-loadbalancer 5000:5000
+python tests/test_prediction.py
+```
+
+### With pytest:
+
+```bash
+pytest tests/test_prediction.py
 ```
 
 ---
 
-## 🚧 Roadmap Highlights
+## 🧩 Common Issues
 
-- Integrate with real housing application data
-- Enable feature logging and monitoring
-- Add automated CI/CD
-- Improve model explainability (e.g., SHAP)
+- **Model file not found (`xgboost_model.pkl` or `scaler.pkl`)**  
+  Make sure you've run the full data pipeline:
+  ```bash
+  python pipeline/data_processing.py
+  python pipeline/model_training.py
+  ```
+
+- **Docker errors related to ports**  
+  Ensure port `5000` is not already in use, or change the exposed port in `docker-compose.yaml`.
+
+- **Prediction returns 500 error**  
+  Check the request body format. All expected fields must be present and correctly typed.
+
+- **App won't start on Windows**  
+  Try running with:
+  ```bash
+  set FLASK_APP=app/main.py
+  python -m flask run
+  ```
+---
+
+## 🔍 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError` | Ensure you're in the virtual environment and installed dependencies |
+| Model not found | Ensure you've run both pipeline scripts to generate the artifacts |
+| Flask doesn't restart on change | Install and run with `flask run --reload` or use a dev watcher |
 
 ---
 
-## 🧵 Suggested Enhancements
+## 🤝 Contributing
 
-- Add endpoint for feature introspection
-- Add schema validation (e.g., `pydantic`)
-- Model versioning support
+Contributions are welcome and appreciated! To get started:
+
+1. Fork the repository and create a new branch.
+2. Make your changes with clear, concise commits.
+3. Ensure all tests pass:
+   ```bash
+   pytest
+   ```
+4. Open a pull request with a detailed description.
+
+Please follow the existing code style and folder conventions. Check out `docs/developer_guide.md` if you’re working on the data pipeline or API logic.
 
 ---
 
-## 🤝 Maintainers & Contacts
+## 🙌 Contributing Tips
 
-This repo is maintained by the JTC Team 4 Bloom Housing project team.  
-Ping us via GitHub Issues for questions!
+- Keep data transformation logic inside `pipeline/`—keep `main.py` minimal.
+- Make sure model outputs stay in sync with expected schema.
+- Document any assumptions in `/docs/` as needed.
+- Test often—changes to preprocessing or model structure may require retraining.
+
+---
+
+## 📬 Questions or Support
+
+If you have questions or need help getting set up:
+
+- Open an [Issue](https://github.com/SarahE-Dev/bloom-housing/issues)
+- Reach out to us on GitHub
+
+## 📜 Licensing
+
+This project is released under the MIT License.
+
+
+
+
+
 

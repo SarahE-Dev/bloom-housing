@@ -6,3 +6,4 @@ xgboost
 pandas
 scikit-learn
 requests
+pytest
