@@ -1,59 +1,104 @@
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { ApplicationCreate } from '../dtos/applications/application-create.dto';
 
-export interface ApplicationDto {
-  income?: string;
-  householdSize?: number;
-  housingStatus?: string;
-  incomeVouchers?: boolean;
-  householdExpectingChanges?: boolean;
-  householdStudent?: boolean;
-}
-
-export interface ModelFeatures {
+export interface ModelInput {
+  age: number;
   income: number;
-  household_size: number;
-  housing_status: number;
-  income_vouchers: number;
-  household_expecting_changes: number;
-  household_student: number;
+  veteran: boolean;
+  benefits: boolean;
+  adult_kids: number;
+  disabled: boolean;
+  threshold?: number;
 }
 
-// This logic will change as our model is training on real data, and what we need to give the model changes. I just wanted to split the logic into separate functions and move to separate file.
+export const mapDtoToModelInput = (dto: ApplicationCreate, threshold: number = 0.5): ModelInput => {
+  console.log('Mapping DTO to Model Input:', dto);
 
-export const mapDtoToModelFeatures = (dto: ApplicationDto): ModelFeatures => {
-  return {
-    income: parseFloat(dto.income?.replace(/[^0-9.]/g, '')) || 0,
-    household_size: dto.householdSize || 1,
-    housing_status: mapHousingStatus(dto.housingStatus),
-    income_vouchers: dto.incomeVouchers ? 1 : 0,
-    household_expecting_changes: dto.householdExpectingChanges ? 1 : 0,
-    household_student: dto.householdStudent ? 1 : 0,
+  // Calculate age from applicant.birthYear
+  const currentYear = new Date().getFullYear();
+  const age = dto.applicant?.birthYear
+    ? Math.max(currentYear - Number(dto.applicant.birthYear), 18) // Ensure age ≥ 18
+    : 30; // Default
+
+  // Calculate adult_kids from householdMember
+  const adultKids = dto.householdMember
+    ? dto.householdMember.filter(
+        (member) =>
+          member.birthYear &&
+          currentYear - Number(member.birthYear) >= 18 && Number(member.birthYear) <= 21,
+      ).length
+    : 0;
+
+  // Determine disabled from accessibility
+  const disabled = !!(
+    dto.accessibility?.mobility ||
+    dto.accessibility?.vision ||
+    dto.accessibility?.hearing
+  );
+
+  // Derive veteran from programs
+  const veteran = Array.isArray(dto.programs)
+    ? dto.programs.some(
+        (program) =>
+          program.key?.toLowerCase() === 'veteran' && program.claimed,
+      )
+    : false;
+
+  // Derive benefits from incomeVouchers or programs
+  const assistancePrograms = ['snap', 'section 8', 'assistance']; // Adjust as needed
+  const benefitsFromPrograms = Array.isArray(dto.programs)
+    ? dto.programs.some(
+        (program) =>
+          program.key?.toLowerCase() &&
+          assistancePrograms.some((ap) =>
+            program.key.toLowerCase().includes(ap),
+          ) && program.claimed,
+      )
+    : false;
+  const benefits = dto.incomeVouchers || benefitsFromPrograms;
+
+  // Parse income, removing any non-numeric characters (e.g., "$")
+  const income = dto.income
+    ? Number(String(dto.income).replace(/[^0-9.]/g, '')) || 0
+    : 0;
+
+  const input = {
+    age,
+    income,
+    veteran,
+    benefits,
+    adult_kids: adultKids,
+    disabled,
+    threshold,
   };
+
+  console.log('Model Input for Flask:', input);
+
+  // Warn about defaults
+  if (!dto.income) {
+    console.warn('Using default for missing field: income');
+  }
+
+  return input;
 };
 
-const mapHousingStatus = (status?: string): number => {
-  switch (status) {
-    case 'homeless':
-      return 0;
-    case 'renting':
-      return 1;
-    case 'owning':
-      return 2;
-    default:
-      return 2;
-  }
-};
+export interface ModelPrediction {
+  prediction: 'Not at Risk' | 'At Risk';
+  probability: number;
+}
+
 
 export const getModelPrediction = async (
   httpService: HttpService,
-  features: ModelFeatures,
-): Promise<number> => {
+  input: ModelInput,
+): Promise<ModelPrediction> => {
   try {
+    const flaskUrl = process.env.FLASK_URL || 'http://localhost:5000';
     const response = await firstValueFrom(
-      httpService.post('http://localhost:5000/predict', { features }),
+      httpService.post(`${flaskUrl}/predict`, input),
     );
-    return response.data.risk_score;
+    return { prediction: response.data.label, probability: response.data.probability }
   } catch (error) {
     console.error('Model Prediction failed:', error.message);
     throw new Error('Model prediction service unavailable');

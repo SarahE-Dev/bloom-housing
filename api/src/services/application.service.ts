@@ -37,10 +37,9 @@ import { PublicAppsViewQueryParams } from '../dtos/applications/public-apps-view
 import { ApplicationsFilterEnum } from '../enums/applications/filter-enum';
 import { PublicAppsViewResponse } from '../dtos/applications/public-apps-view-response.dto';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
 import {
   getModelPrediction,
-  mapDtoToModelFeatures,
+  mapDtoToModelInput,
 } from 'src/utilities/model.helper';
 
 export const view: Partial<
@@ -780,13 +779,18 @@ export class ApplicationService {
     if (dto.predictRisk) {
       try {
         // Use helper functions
-        const features = mapDtoToModelFeatures(dto);
-        mappedApplication.riskScore = await getModelPrediction(
+        const features = mapDtoToModelInput(dto, 0.5);
+        const response = await getModelPrediction(
           this.httpService,
           features,
         );
+
+        const { prediction, probability } = response;
+
+        mappedApplication.riskPrediction = prediction;
+        mappedApplication.riskProbability = probability;
         
-        console.log(`Risk score calculated for application ${mappedApplication.id}: ${mappedApplication.riskScore}`);
+        console.log(`Risk score calculated for application ${mappedApplication.id}: ${mappedApplication.riskPrediction}, Risk probability: ${mappedApplication.riskProbability}`);
       } catch (error) {
         console.error('Risk score processing failed:', error);
       }
