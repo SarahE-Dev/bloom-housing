@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo } from "react"
 import { useRouter } from "next/router"
 import Markdown from "markdown-to-jsx"
-import { t, ApplicationTimeline } from "@bloom-housing/ui-components"
+import { t, ApplicationTimeline, Card } from "@bloom-housing/ui-components"
 import { CardSection } from "@bloom-housing/ui-seeds/src/blocks/Card"
 import {
   imageUrlFromListing,
@@ -122,6 +122,20 @@ const ApplicationConfirmation = () => {
               </Button>
             </CardSection>
           )}
+          
+    <CardSection divider={"flush"}>
+      <CardSection>
+        <Link href="https://www.cdss.ca.gov/inforesources/cdss-programs/housing-programs/calworks-homeless-assistance">Resource 1</Link>
+      </CardSection>
+      <CardSection>
+        <Link href="https://211ca.org/">Resource 2</Link>
+      </CardSection>
+      <CardSection divider={"flush"}>
+        <Link href="https://www.hud.gov/states/california">Resource 3</Link>
+      </CardSection>
+    </CardSection>
+
+
 
           <CardSection divider={"flush"}>
             <Link href="/listings">{t("application.review.confirmation.browseMore")}</Link>
