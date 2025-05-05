@@ -220,10 +220,10 @@ const ApplicationTerms = () => {
                   fieldLabelClassName={"text-primary"}
                   dataTestId={"app-terms-agree"}
                 />
-                <p className="markdown">
+                <p className="markdown mt-2">
                   {t("application.review.terms.receiveResourcesText")}
                 </p>
-                <div className="flex flex-col">
+                <div className="flex flex-col space-y-2 pt-2">
                   <Field
                     id="predictRiskYes"
                     name="predictRisk"
