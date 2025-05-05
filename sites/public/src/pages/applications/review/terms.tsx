@@ -83,15 +83,18 @@ const ApplicationTerms = () => {
             // TODO remove this once this call is changed to the new backend
           },
         })
+        // save
         .then((result) => {
           conductor.currentStep.save({ 
             confirmationCode: result.confirmationCode, 
             riskPrediction: predictRisk ? result.riskPrediction : null,
             riskProbability: predictRisk ? result.riskProbability : null, 
           })
-          
+          // If the user opted in to risk prediction, log the result and probability
+          // Otherwise, log that the prediction was not requested
           if (predictRisk) {
             console.log(`Risk prediction returned from server: ${result.riskPrediction}, Risk probability: ${result.riskProbability}`);
+            localStorage.setItem("riskPrediction", result.riskPrediction);
           } else {
             console.log('Risk prediction was not requested');
           }
@@ -217,10 +220,10 @@ const ApplicationTerms = () => {
                   fieldLabelClassName={"text-primary"}
                   dataTestId={"app-terms-agree"}
                 />
-                <p className="markdown">
+                <p className="markdown mt-2">
                   {t("application.review.terms.receiveResourcesText")}
                 </p>
-                <div className="flex flex-col">
+                <div className="flex flex-col space-y-2 pt-2">
                   <Field
                     id="predictRiskYes"
                     name="predictRisk"
