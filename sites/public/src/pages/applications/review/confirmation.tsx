@@ -99,8 +99,7 @@ const ApplicationConfirmation = () => {
         <>
           <p>
             Based on your responses, we’ve gathered some helpful resources that may offer immediate
-            support and guidance. These programs are available to assist individuals and families
-            experiencing housing-related challenges.
+            support and guidance.
           </p>
           <p className="font-semibold">Recommended Support Services</p>
         </>
