@@ -86,11 +86,12 @@ const ApplicationTerms = () => {
         .then((result) => {
           conductor.currentStep.save({ 
             confirmationCode: result.confirmationCode, 
-            riskScore: predictRisk ? result.riskScore : null 
+            riskPrediction: predictRisk ? result.riskPrediction : null,
+            riskProbability: predictRisk ? result.riskProbability : null, 
           })
           
           if (predictRisk) {
-            console.log(`Risk score returned from server: ${result.riskScore}`);
+            console.log(`Risk prediction returned from server: ${result.riskPrediction}, Risk probability: ${result.riskProbability}`);
           } else {
             console.log('Risk prediction was not requested');
           }

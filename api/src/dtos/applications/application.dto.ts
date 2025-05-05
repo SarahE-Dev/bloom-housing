@@ -277,5 +277,8 @@ export class Application extends AbstractDTO {
   applicationLotteryPositions: ApplicationLotteryPosition[];
 
   @ApiProperty({ required: false })
-  riskScore?: number;
+  riskPrediction?: string;
+
+  @ApiProperty({ required: false })
+  riskProbability?: number;
 }
