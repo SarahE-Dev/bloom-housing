@@ -64,7 +64,7 @@ def prepare_features(age, income, veteran, benefits,
         "HHADLTKIDS": adult_kids,
         # DISHH: 1 = yes, 2 = no
         "DISHH": 1 if disabled else 2,
-        "MILHH": 2 if veteran else 6,
+        "MILHH": 6,
         "FS": 1 if benefits else 0,
         "PAP": 0,
     }
@@ -175,6 +175,7 @@ def predict_endpoint():
             adult_kids=adult_kids,
             disabled=disabled
         )
+        print(df)
         result = predict_risk(model, scaler, df, threshold)
         return jsonify(result)
 

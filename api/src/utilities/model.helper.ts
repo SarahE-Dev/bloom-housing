@@ -12,58 +12,59 @@ export interface ModelInput {
   threshold?: number;
 }
 
-export const mapDtoToModelInput = (dto: ApplicationCreate, threshold: number = 0.5): ModelInput => {
+export const mapDtoToModelInput = (
+  dto: ApplicationCreate,
+  threshold: number = 0.5,
+): ModelInput => {
   console.log('Mapping DTO to Model Input:', dto);
 
-  // Calculate age from applicant.birthYear
   const currentYear = new Date().getFullYear();
-  const age = dto.applicant?.birthYear
-    ? Math.max(currentYear - Number(dto.applicant.birthYear), 18) // Ensure age ≥ 18
-    : 30; // Default
 
-  // Calculate adult_kids from householdMember
+  // Calculate age
+  const age = dto.applicant?.birthYear
+    ? Math.max(currentYear - Number(dto.applicant.birthYear), 18)
+    : 30;
+
+  // Calculate adult kids (ages 18–21)
   const adultKids = dto.householdMember
     ? dto.householdMember.filter(
         (member) =>
           member.birthYear &&
-          currentYear - Number(member.birthYear) >= 18 && Number(member.birthYear) <= 21,
+          currentYear - Number(member.birthYear) >= 18 &&
+          currentYear - Number(member.birthYear) <= 21,
       ).length
     : 0;
 
-  // Determine disabled from accessibility
+  // Check for disabilities
   const disabled = !!(
     dto.accessibility?.mobility ||
     dto.accessibility?.vision ||
     dto.accessibility?.hearing
   );
 
-  // Derive veteran from programs
+  // Check for veteran status
   const veteran = Array.isArray(dto.programs)
     ? dto.programs.some(
         (program) =>
-          program.key?.toLowerCase() === 'veteran' && program.claimed,
+          typeof program.key === 'string' &&
+          program.key.toLowerCase().includes('veteran') &&
+          program.claimed === true,
       )
     : false;
 
-  // Derive benefits from incomeVouchers or programs
-  const assistancePrograms = ['snap', 'section 8', 'assistance']; // Adjust as needed
-  const benefitsFromPrograms = Array.isArray(dto.programs)
-    ? dto.programs.some(
-        (program) =>
-          program.key?.toLowerCase() &&
-          assistancePrograms.some((ap) =>
-            program.key.toLowerCase().includes(ap),
-          ) && program.claimed,
-      )
-    : false;
-  const benefits = dto.incomeVouchers || benefitsFromPrograms;
+  // Check for public benefits
+  const benefits = !!dto.incomeVouchers;
 
-  // Parse income, removing any non-numeric characters (e.g., "$")
-  const income = dto.income
+  // Parse and normalize income
+  let income = dto.income
     ? Number(String(dto.income).replace(/[^0-9.]/g, '')) || 0
     : 0;
 
-  const input = {
+  if (dto.incomePeriod === 'perMonth') {
+    income *= 12;
+  }
+
+  const input: ModelInput = {
     age,
     income,
     veteran,
@@ -75,7 +76,6 @@ export const mapDtoToModelInput = (dto: ApplicationCreate, threshold: number = 0
 
   console.log('Model Input for Flask:', input);
 
-  // Warn about defaults
   if (!dto.income) {
     console.warn('Using default for missing field: income');
   }
@@ -88,7 +88,6 @@ export interface ModelPrediction {
   probability: number;
 }
 
-
 export const getModelPrediction = async (
   httpService: HttpService,
   input: ModelInput,
@@ -98,7 +97,10 @@ export const getModelPrediction = async (
     const response = await firstValueFrom(
       httpService.post(`${flaskUrl}/predict`, input),
     );
-    return { prediction: response.data.label, probability: response.data.probability }
+    return {
+      prediction: response.data.label,
+      probability: response.data.probability,
+    };
   } catch (error) {
     console.error('Model Prediction failed:', error.message);
     throw new Error('Model prediction service unavailable');
