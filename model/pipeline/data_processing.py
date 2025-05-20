@@ -50,7 +50,7 @@ def create_at_risk_column(df: pd.DataFrame) -> pd.DataFrame:
     """Create 'at_risk' column based on specified conditions."""
     try:
         df["at_risk"] = (
-            (df["PERPOVLVL"] <= 100) |  # Poverty level <= 100%
+            (df["PERPOVLVL"] <= 124) |  # Poverty level <= 124% per CA
             (df["HIHALF"] == 1) |       # High housing cost burden
             (df["HIMORTFORC"] == 1) |   # Mortgage foreclosure
             (df["HIEVICNOTE"] == 1) |   # Eviction notice
