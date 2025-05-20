@@ -80,7 +80,7 @@ def prepare_features_and_target(df: pd.DataFrame) -> tuple:
         logger.error(f"Error preparing features and target: {str(e)}")
         raise
 
-def create_pipeline(continuous_cols: list, scale_pos_weight: float = 1.0) -> Pipeline:
+def create_pipeline(continuous_cols: list) -> Pipeline:
     """Create the preprocessing and model pipeline."""
     try:
         preprocessor = ColumnTransformer(
@@ -94,7 +94,7 @@ def create_pipeline(continuous_cols: list, scale_pos_weight: float = 1.0) -> Pip
                 XGBClassifier(
                     n_estimators=100,
                     learning_rate=0.1,
-                    scale_pos_weight=scale_pos_weight,
+                    scale_pos_weight=2.5,
                     random_state=RANDOM_SEED,
                     objective="binary:logistic",
                     eval_metric=["logloss", "auc"],
@@ -244,7 +244,7 @@ def main():
         logger.info(f"Class imbalance ratio: {class_ratio:.2f}")
 
         # Create and train pipeline
-        model_pipeline = create_pipeline(continuous_cols, scale_pos_weight=class_ratio)
+        model_pipeline = create_pipeline(continuous_cols)
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y
         )
