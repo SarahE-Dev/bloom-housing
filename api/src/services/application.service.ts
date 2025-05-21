@@ -779,7 +779,7 @@ export class ApplicationService {
     if (dto.predictRisk) {
       try {
         // Use helper functions
-        const features = mapDtoToModelInput(dto, 0.5);
+        const features = mapDtoToModelInput(dto);
         const response = await getModelPrediction(
           this.httpService,
           features,
