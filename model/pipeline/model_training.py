@@ -101,7 +101,7 @@ def create_pipeline(continuous_cols: list) -> Pipeline:
                 ),
             ),
         ])
-        logger.info(f"Created model pipeline with scale_pos_weight={scale_pos_weight:.2f}")
+        logger.info(f"Created model pipeline with scale_pos_weight={2.5}")
         return pipeline
     except Exception as e:
         logger.error(f"Error creating pipeline: {str(e)}")
