@@ -1,365 +1,235 @@
 import pandas as pd
-import numpy as np
-import os
+from pathlib import Path
 import logging
+import os
 
-# Set up logging
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def load_and_clean_household_data(csv_file="household.csv", data_dir="data"):
-    """
-    Load and clean household data from a CSV file with specified columns.
-    
-    Parameters:
-    -----------
-    csv_file : str
-        Name of the CSV file (default: 'household.csv')
-    data_dir : str
-        Directory containing the CSV file (default: 'data')
-        
-    Returns:
-    --------
-    pandas.DataFrame : Loaded and cleaned household data with 'at_risk' column
-    """
+# Get the directory of the current script
+SCRIPT_DIR = Path(__file__).parent
+DATA_DIR = SCRIPT_DIR / ".." / "data"
+
+def load_household_data() -> pd.DataFrame:
+    """Load and clean household data from CSV."""
+    input_path = DATA_DIR / "household.csv"
     try:
-        # Construct relative path to CSV (data directory is at same level as pipeline)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        data_path = os.path.join(base_dir, "..", data_dir, csv_file)
-        csv_path = os.path.normpath(data_path)  # Normalize path to handle '..' correctly
+        cols = [
+            "CONTROL", "HINCP", "DISHH", "FS", "HUDSUB", "RENTSUB", "RENTCNTRL",
+            "NUMPEOPLE", "PERPOVLVL", "HIHALF", "HIBEHINDFRQ", "HIMORTFORC",
+            "HIEVICNOTE", "HINFORC", "MILHH"
+        ]
+        df = pd.read_csv(input_path, usecols=cols)
+        logger.info(f"Loaded {len(df)} households from {input_path}")
         
-        # Validate file existence
-        if not os.path.exists(csv_path):
-            raise FileNotFoundError(f"CSV file not found at: {csv_path}")
+        # Log NaN values before coercion
+        nan_counts = df.isna().sum()
+        if nan_counts.sum() > 0:
+            logger.warning(f"NaN values found before coercion: {nan_counts[nan_counts > 0].to_dict()}")
         
-        logger.info(f"Loading household data from {csv_path}")
-        
-        # Load data with specified columns
-        columns = ["CONTROL", "HINCP", "DISHH", "FS", "HHADLTKIDS", 
-                  "PERPOVLVL", "HIHALF", "HIBEHINDFRQ", "HIMORTFORC", 
-                  "HIEVICNOTE", "MILHH"]
-        
-        df = pd.read_csv(
-            csv_path,
-            usecols=columns
-        )
-        
-        logger.info(f"Loaded {len(df)} households")
-        
-        # Data Cleaning
-        # Remove single quotes and convert to int, except CONTROL column
+        # Convert columns to int, removing quotes
         for col in df.columns:
             if col != "CONTROL":
-                df[col] = df[col].astype(str).str.replace("'", "").astype(int)
+                df[col] = pd.to_numeric(df[col].astype(str).str.replace("'", ""), errors='coerce').fillna(0).astype(int)
         
-        # Drop rows where HINCP is below 0
-        initial_rows = len(df)
-        df = df[df['HINCP'] >= 0]
-        if len(df) < initial_rows:
-            logger.info(f"Dropped {initial_rows - len(df)} rows where HINCP < 0")
+        # Filter rows where HINCP >= 0
+        rows_before = len(df)
+        df = df[df["HINCP"] >= 0]
+        logger.info(f"Rows after cleaning HINCP: {len(df)} (dropped {rows_before - len(df)} rows)")
         
-        # Create 'at_risk' column based on conditions
-        df['at_risk'] = (
-            (df['PERPOVLVL'] <= 100) |
-            (df['HIHALF'] == 1) |
-            (df['HIMORTFORC'] == 1) |
-            (df['HIEVICNOTE'] == 1) |
-            (df['HIBEHINDFRQ'].isin([2, 3, 4]))
+        return df
+    except FileNotFoundError:
+        logger.error(f"File not found: {input_path}")
+        raise
+    except Exception as e:
+        logger.error(f"Error loading household data: {str(e)}")
+        raise
+
+def create_at_risk_column(df: pd.DataFrame) -> pd.DataFrame:
+    """Create 'at_risk' column based on specified conditions."""
+    try:
+        df["at_risk"] = (
+            (df["PERPOVLVL"] <= 124) |  # Poverty level <= 124% per CA
+            (df["HIHALF"] == 1) |       # High housing cost burden
+            (df["HIMORTFORC"] == 1) |   # Mortgage foreclosure
+            (df["HIEVICNOTE"] == 1) |   # Eviction notice
+            (df["HIBEHINDFRQ"].isin([2, 3, 4])) |  # Frequent missed payments
+            (df["HINFORC"] == 1)        # Other foreclosure issues
         ).astype(int)
         
-        # Drop columns used to make 'at_risk' column
-        df = df.drop(columns=['PERPOVLVL', 'HIHALF', 'HIBEHINDFRQ', 'HIEVICNOTE', 'HIMORTFORC'])
-        
+        # Drop columns used for at_risk calculation
+        df = df.drop(columns=[
+            "PERPOVLVL", "HIHALF", "HIBEHINDFRQ", 
+            "HIEVICNOTE", "HIMORTFORC", "HINFORC"
+        ])
+        logger.info("Created at_risk column and dropped temporary columns")
         return df
-    
-    except FileNotFoundError as e:
-        logger.error(f"File error: {str(e)}")
-        raise
-    except pd.errors.EmptyDataError:
-        logger.error("Household CSV file is empty")
-        raise
-    except KeyError as e:
-        logger.error(f"Column not found in household CSV: {str(e)}")
-        raise
-    except ValueError as e:
-        logger.error(f"Data conversion error in household data: {str(e)}")
-        raise
     except Exception as e:
-        logger.error(f"Unexpected error in household data: {str(e)}")
+        logger.error(f"Error creating at_risk column: {str(e)}")
         raise
 
-def load_and_clean_person_data(csv_file="person.csv", data_dir="data"):
-    """
-    Load and clean person data from a CSV file with specified columns.
-    
-    Parameters:
-    -----------
-    csv_file : str
-        Name of the CSV file (default: 'person.csv')
-    data_dir : str
-        Directory containing the CSV file (default: 'data')
-        
-    Returns:
-    --------
-    pandas.DataFrame : Loaded and cleaned person data
-    """
+def load_person_data() -> pd.DataFrame:
+    """Load and clean person data from CSV."""
+    input_path = DATA_DIR / "person.csv"
     try:
-        # Construct relative path to CSV (data directory is at same level as pipeline)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        data_path = os.path.join(base_dir, "..", data_dir, csv_file)
-        csv_path = os.path.normpath(data_path)  # Normalize path to handle '..' correctly
+        df = pd.read_csv(input_path, usecols=["CONTROL", "AGE", "PAP", "MIL"])
         
-        # Validate file existence
-        if not os.path.exists(csv_path):
-            raise FileNotFoundError(f"CSV file not found at: {csv_path}")
+        # Log NaN values before coercion
+        nan_counts = df.isna().sum()
+        if nan_counts.sum() > 0:
+            logger.warning(f"NaN values in person data: {nan_counts[nan_counts > 0].to_dict()}")
         
-        logger.info(f"Loading person data from {csv_path}")
+        # Convert MIL to numeric
+        df["MIL"] = pd.to_numeric(df["MIL"].astype(str).str.replace("'", ""), errors='coerce').fillna(0).astype(int)
         
-        # Load data with specified columns
-        df = pd.read_csv(
-            csv_path,
-            usecols=['CONTROL', 'AGE', 'PAP', 'MIL']
+        # Validate AGE
+        rows_before = len(df)
+        df = df[df["AGE"] >= 0]
+        logger.info(f"Rows after cleaning AGE: {len(df)} (dropped {rows_before - len(df)} rows)")
+        
+        logger.info(f"Loaded and cleaned person data from {input_path}")
+        return df
+    except FileNotFoundError:
+        logger.error(f"File not found: {input_path}")
+        raise
+    except Exception as e:
+        logger.error(f"Error loading person data: {str(e)}")
+        raise
+
+def merge_datasets(household_df: pd.DataFrame, person_df: pd.DataFrame) -> pd.DataFrame:
+    """Merge household and person datasets."""
+    try:
+        # Log unmatched records
+        unmatched_persons = person_df[~person_df["CONTROL"].isin(household_df["CONTROL"])]
+        unmatched_households = household_df[~household_df["CONTROL"].isin(person_df["CONTROL"])]
+        if not unmatched_persons.empty:
+            logger.warning(f"{len(unmatched_persons)} person records unmatched")
+        if not unmatched_households.empty:
+            logger.warning(f"{len(unmatched_households)} household records unmatched")
+        
+        merged_df = pd.merge(
+            person_df, household_df, 
+            on="CONTROL", 
+            how="inner", 
+            validate="many_to_one"
         )
-        
-        # Clean MIL column
-        df['MIL'] = df['MIL'].astype(str).str.replace("'", "").astype(int)
-        
-        logger.info(f"Loaded {len(df)} person records")
-        
-        return df
-    
-    except FileNotFoundError as e:
-        logger.error(f"File error: {str(e)}")
-        raise
-    except pd.errors.EmptyDataError:
-        logger.error("Person CSV file is empty")
-        raise
-    except KeyError as e:
-        logger.error(f"Column not found in person CSV: {str(e)}")
-        raise
-    except ValueError as e:
-        logger.error(f"Data conversion error in person data: {str(e)}")
-        raise
+        logger.info(f"Merged datasets, resulting in {len(merged_df)} rows")
+        return merged_df
     except Exception as e:
-        logger.error(f"Unexpected error in person data: {str(e)}")
+        logger.error(f"Error merging datasets: {str(e)}")
         raise
 
-def apply_encoding(df, mappings_dict):
-    """
-    Apply one-hot encoding to specified columns using provided mappings.
-    
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        Input DataFrame to encode
-    mappings_dict : dict
-        Dictionary of column names to mapping dictionaries for encoding
-        
-    Returns:
-    --------
-    pandas.DataFrame : DataFrame with encoded columns
-    """
+def create_gov_assistance_column(df: pd.DataFrame) -> pd.DataFrame:
+    """Create government assistance column and clean up related columns."""
     try:
-        for column_name, mapping in mappings_dict.items():
-            # Create a temporary Series with mapped values for encoding
-            temp_series = df[column_name].map(mapping)
-            
-            # Check for unmapped values
-            if temp_series.isna().any():
-                unmapped_values = df[column_name][temp_series.isna()].unique()
-                logger.warning(f"Unmapped values in {column_name}: {unmapped_values}")
-                raise ValueError(f"Unmapped values in {column_name}: {unmapped_values}")
-            
-            # One-hot encode the mapped values
-            encoded = pd.get_dummies(temp_series).astype(int)
-            
-            # Add encoded columns to the result
-            df = pd.concat([df.drop(column_name, axis=1), encoded], axis=1)
+        df["gov_assistance"] = (
+            (df["RENTSUB"].isin([1, 2, 3, 4, 5])) |  # Rental subsidies
+            (df["FS"] == 1) |                       # Food stamps/SNAP
+            (df["PAP"] > 0) |                       # Public assistance income
+            (df["HUDSUB"] == 1)                     # HUD subsidies
+        ).astype(int)
         
+        # Drop columns used for gov_assistance
+        df = df.drop(columns=["FS", "PAP", "HUDSUB", "RENTSUB", "RENTCNTRL"])
+        logger.info("Created gov_assistance column and dropped temporary columns")
         return df
-    
-    except KeyError as e:
-        logger.error(f"Column not found during encoding: {str(e)}")
-        raise
     except Exception as e:
-        logger.error(f"Error during encoding: {str(e)}")
+        logger.error(f"Error creating gov_assistance column: {str(e)}")
+        raise
+
+def finalize_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Finalize dataset with final cleaning and transformations."""
+    try:
+        # Drop rows with -9
+        rows_before = len(df)
+        df = df[~df.isin([-9]).any(axis=1)]
+        logger.info(f"Dropped {rows_before - len(df)} rows with -9 values")
+        
+        # Drop MIL and CONTROL columns
+        df = df.drop(columns=["MIL", "CONTROL"])
+        
+        # Convert MILHH and DISHH to binary
+        # Note: MILHH=1 for values 1-5 (veteran or active military household); verify data dictionary
+        df["MILHH"] = df["MILHH"].isin([1, 2, 3, 4, 5]).astype(int)
+        df["DISHH"] = (df["DISHH"] == 1).astype(int)
+        
+        # Ensure final feature order
+        final_columns = ["HINCP", "AGE", "NUMPEOPLE", "DISHH", "MILHH", "gov_assistance", "at_risk"]
+        df = df[final_columns]
+        
+        logger.info(f"Final dataset shape: {df.shape}")
+        return df
+    except Exception as e:
+        logger.error(f"Error finalizing data: {str(e)}")
+        raise
+
+def save_dataframe(df: pd.DataFrame, filename: str) -> None:
+    """Save DataFrame to CSV."""
+    output_path = DATA_DIR / filename
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output_path, index=False)
+        logger.info(f"Saved DataFrame to {output_path}")
+    except Exception as e:
+        logger.error(f"Error saving DataFrame to {output_path}: {str(e)}")
+        raise
+
+def print_data_summary(df: pd.DataFrame) -> None:
+    """Print summary statistics of the dataset."""
+    try:
+        print("Null values in dataset:\n")
+        print(df.isna().sum())
+        print("\nData types in dataset:\n")
+        print(df.dtypes)
+        print("\nNumber of unique values in each column:\n")
+        print(df.nunique())
+        
+        print("\nContinuous feature statistics:\n")
+        print(df[["HINCP", "AGE", "NUMPEOPLE"]].describe())
+        
+        print("\nValue counts for columns with less than 10 unique values:\n")
+        cols = ["MILHH", "NUMPEOPLE", "DISHH", "gov_assistance", "at_risk"]
+        for col in cols:
+            print(f"\n{col}:\n")
+            print(df[col].value_counts())
+        
+        print("\nHINCP distribution by at_risk:\n")
+        print(df.groupby("at_risk")["HINCP"].describe())
+    except Exception as e:
+        logger.error(f"Error printing data summary: {str(e)}")
         raise
 
 def main():
-    """
-    Main function to orchestrate loading, cleaning, merging, updating, and encoding of household and person data.
-    
-    Returns:
-    --------
-    pandas.DataFrame : Final encoded DataFrame
-    """
+    """Main function to orchestrate data processing."""
     try:
-        # Load and clean household data
-        household_df = load_and_clean_household_data()
-        
-        # Save cleaned household data
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        output_path = os.path.join(base_dir, "..", "data", "household_cleaned.csv")
-        output_path = os.path.normpath(output_path)  # Normalize path
-        household_df.to_csv(output_path, index=False)
-        logger.info(f"Saved cleaned household data to {output_path}")
-        
-        # Display household data
-        print(household_df.head(20))
-        print(f"\n\n{len(household_df)} Households loaded")
-        print(f'Rows after cleaning: {len(household_df)}')
-        
-        # Load and clean person data
-        person_df = load_and_clean_person_data()
-        
-        # Display person data
-        print("\nPerson Data Preview:")
-        print(person_df.head(20))
-        print(f"\n{len(person_df)} Person records loaded")
-        
-        # Merge household and person data
-        logger.info("Merging household and person data")
-        main_df = pd.merge(
-            person_df,
-            household_df,
-            on='CONTROL',
-            how='inner',
-            validate='many_to_one'
-        )
-        
-        # Display merged data
-        print("\nMerged Data Preview:")
-        print(main_df.head(20))
-        print(f"\n{len(main_df)} Records in merged dataset")
-        logger.info(f"Merged dataset contains {len(main_df)} records")
-        
-        # Update 'at_risk' column for MIL == 2
-        logger.info("Updating at_risk column for MIL == 2")
-        mask = main_df['MIL'] == 2
-        population_size = mask.sum()
-        probability_of_atrisk = 0.4  # 40% chance of 1
-        
-        if population_size > 0:
-            # Generate random binary values
-            binary_values = np.random.choice(
-                [0, 1],
-                size=population_size,
-                p=[1 - probability_of_atrisk, probability_of_atrisk]
-            )
-            
-            # Validate the proportion
-            print(f"Proportion of 1s in binary values: {np.mean(binary_values)}")
-            
-            # Update the 'at_risk' column
-            main_df.loc[mask, 'at_risk'] = binary_values
-            
-            # Display updated values
-            print('\n\n')
-            print("Updated MIL at risk values:\n")
-            print(main_df[mask][['MIL', 'at_risk']].value_counts())
-        else:
-            logger.info("No records with MIL == 2 found for at_risk update")
-        
-        # Check class ratio of at_risk column
-        print("\nAt-risk class distribution (expecting ~4:1 ratio of 0s to 1s):")
-        print(main_df['at_risk'].value_counts())
-        logger.info(f"At-risk class distribution:\n{main_df['at_risk'].value_counts().to_dict()}")
-        
-        # Create gov_assistance column
-        logger.info("Creating gov_assistance column")
-        main_df['gov_assistance'] = ((main_df['FS'] == 1) | (main_df['PAP'] > 0)).astype(int)
-        
-        # Drop FS and PAP columns
-        main_df = main_df.drop(columns=['FS', 'PAP'])
-        
-        # Drop rows with -9 in any column
-        initial_rows = len(main_df)
-        main_df = main_df[~main_df.isin([-9]).any(axis=1)]
-        if len(main_df) < initial_rows:
-            logger.info(f"Dropped {initial_rows - len(main_df)} rows containing -9")
-        
-        # Drop MIL and CONTROL columns
-        main_df = main_df.drop(columns=['MIL', 'CONTROL'])
-        
-        # Save merged data
-        output_path = os.path.join(base_dir, "..", "data", "main_df.csv")
-        output_path = os.path.normpath(output_path)
-        main_df.to_csv(output_path, index=False)
-        logger.info(f"Saved merged data to {output_path}")
-        
-        # Display unique values and value counts
-        print("\nNumber of unique values in each column:\n")
-        print(main_df.nunique())
-        print('\n\n')
-        
-        print("Value counts for columns with less than 10 unique values:\n")
-        print(main_df['MILHH'].value_counts())
-        print('\n')
-        print(main_df['HHADLTKIDS'].value_counts())
-        print('\n')
-        print(main_df['DISHH'].value_counts())
-        print('\n')
-        print(main_df['at_risk'].value_counts())
-        print('\n')
-        print(main_df['gov_assistance'].value_counts())
-        
-        # Define mappings for one-hot encoding
-        dishh_mapping = {
-            1: "disabled_person_in_household_yes",
-            2: "disabled_person_in_household_no",
-            -6: "disabled_person_in_household_no"
-        }
-        
-        milhh_mapping = {
-            1: "military_1person_active",
-            2: "military_1person_veteran",
-            3: "military_2plus_active_no_veterans",
-            4: "military_2plus_veterans",
-            5: "military_2plus_mix_active_veterans",
-            6: "military_no_service",
-            -6: "military_no_service"
-        }
-        
-        gov_assistance_mapping = {
-            0: "no_government_assistance",
-            1: "government_assistance"
-        }
-        
-        mappings = {
-            'DISHH': dishh_mapping,
-            'MILHH': milhh_mapping,
-            'gov_assistance': gov_assistance_mapping
-        }
-        
-        # Apply one-hot encoding
-        logger.info("Applying one-hot encoding")
-        final_df = apply_encoding(main_df, mappings)
-        
-        # Save final encoded data
-        output_path = os.path.join(base_dir, "..", "data", "final_df.csv")
-        output_path = os.path.normpath(output_path)
-        final_df.to_csv(output_path, index=False)
-        logger.info(f"Saved final encoded data to {output_path}")
-        
-        # Display final encoded data
-        print("\nFinal Encoded Data Preview:")
-        print(final_df.head(20))
-        logger.info("Completed all data processing and encoding steps")
-        
-        return final_df
-    
-    except pd.errors.MergeError as e:
-        logger.error(f"Merge error: {str(e)}")
-        raise
-    except KeyError as e:
-        logger.error(f"Column not found during processing: {str(e)}")
-        raise
+        # Process household data
+        household_df = load_household_data()
+        household_df = create_at_risk_column(household_df)
+        save_dataframe(household_df, "household_cleaned-v2.csv")
+
+        # Process person data
+        person_df = load_person_data()
+        save_dataframe(person_df, "person_cleaned-v2.csv")
+
+        # Merge datasets
+        main_df = merge_datasets(household_df, person_df)
+
+        # Create government assistance column
+        main_df = create_gov_assistance_column(main_df)
+
+        # Finalize data
+        main_df = finalize_data(main_df)
+
+        # Save final dataset
+        save_dataframe(main_df, "final_df-v2.csv")
+
+        # Print summary
+        print_data_summary(main_df)
+
     except Exception as e:
         logger.error(f"Error in main pipeline: {str(e)}")
         raise
 
 if __name__ == "__main__":
-    try:
-        final_df = main()
-    except Exception as e:
-        print(f"Pipeline failed: {str(e)}")
+    main()
