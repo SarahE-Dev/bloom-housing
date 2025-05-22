@@ -7,15 +7,11 @@ export interface ModelInput {
   income: number;
   veteran: boolean;
   benefits: boolean;
-  adult_kids: number;
+  num_people: number;
   disabled: boolean;
-  threshold?: number;
 }
 
-export const mapDtoToModelInput = (
-  dto: ApplicationCreate,
-  threshold: number = 0.5,
-): ModelInput => {
+export const mapDtoToModelInput = (dto: ApplicationCreate): ModelInput => {
   console.log('Mapping DTO to Model Input:', dto);
 
   const currentYear = new Date().getFullYear();
@@ -25,15 +21,10 @@ export const mapDtoToModelInput = (
     ? Math.max(currentYear - Number(dto.applicant.birthYear), 18)
     : 30;
 
-  // Calculate adult kids (ages 18–21)
-  const adultKids = dto.householdMember
-    ? dto.householdMember.filter(
-        (member) =>
-          member.birthYear &&
-          currentYear - Number(member.birthYear) >= 18 &&
-          currentYear - Number(member.birthYear) <= 21,
-      ).length
-    : 0;
+  // Calculate total number of people (applicant + household members)
+  const num_people = dto.householdMember
+    ? 1 + dto.householdMember.length // 1 for applicant + household members
+    : 1;
 
   // Check for disabilities
   const disabled = !!(
@@ -42,15 +33,45 @@ export const mapDtoToModelInput = (
     dto.accessibility?.hearing
   );
 
-  // Check for veteran status
-  const veteran = Array.isArray(dto.programs)
-    ? dto.programs.some(
-        (program) =>
-          typeof program.key === 'string' &&
-          program.key.toLowerCase().includes('veteran') &&
-          program.claimed === true,
-      )
-    : false;
+  // Check for veteran status with options validation
+  let veteran = false;
+  if (Array.isArray(dto.programs)) {
+    console.log('Programs array:', JSON.stringify(dto.programs, null, 2));
+    veteran = dto.programs.some((program, index) => {
+      // Skip invalid or missing program entries
+      if (!program || typeof program !== 'object') {
+        console.warn(`Invalid program at index ${index}:`, program);
+        return false;
+      }
+      // Ensure key is a string and claimed is a boolean
+      if (typeof program.key !== 'string' || typeof program.claimed !== 'boolean') {
+        console.warn(
+          `Invalid program key or claimed at index ${index}:`,
+          `key=${program.key}, claimed=${program.claimed}`,
+        );
+        return false;
+      }
+      // Check if program is veteran-related and claimed
+      const isVeteranProgram = program.key.toLowerCase().includes('veteran') && program.claimed === true;
+      if (!isVeteranProgram) {
+        return false;
+      }
+      // Check options array for veteran status
+      const options = Array.isArray(program.options) ? program.options : [];
+      const hasYes = options.some((option) => {
+        const isYes = typeof option.key === 'string' && option.key.toLowerCase() === 'yes' && option.checked === true;
+        return isYes;
+      });
+      const hasNo = options.some((option) => {
+        const isNo = typeof option.key === 'string' && option.key.toLowerCase() === 'no' && option.checked === true;
+        return isNo;
+      });
+      const veteranStatus = isVeteranProgram && hasYes && !hasNo;
+      return veteranStatus;
+    });
+  } else {
+    console.warn('Programs is not an array:', dto.programs);
+  }
 
   // Check for public benefits
   const benefits = !!dto.incomeVouchers;
@@ -69,9 +90,8 @@ export const mapDtoToModelInput = (
     income,
     veteran,
     benefits,
-    adult_kids: adultKids,
+    num_people,
     disabled,
-    threshold,
   };
 
   console.log('Model Input for Flask:', input);
