@@ -15,7 +15,7 @@ import FormsLayout from "../../../layouts/forms"
 import { AppSubmissionContext } from "../../../lib/applications/AppSubmissionContext"
 import { UserStatus } from "../../../lib/constants"
 import { ReviewOrderTypeEnum } from "@bloom-housing/shared-helpers/src/types/backend-swagger"
-import { useFormConductor } from "../../../lib/hooks"
+import CustomResults from "../../../components/applications/CustomResults"
 
 export const atRiskResources = [
   {
@@ -90,6 +90,40 @@ const ApplicationConfirmation = () => {
   const { initialStateLoaded, profile } = useContext(AuthContext)
   const [riskPrediction, setRiskPrediction] = useState<string | null>(null)
   const router = useRouter()
+
+  const [customQuery, setCustomQuery] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [customResults, setCustomResults] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleCustomSearch = async () => {
+    setLoading(true)
+    setError(null)
+    setCustomResults(null)
+
+    try {
+      const response = await fetch('http://localhost:5001/search', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setCustomQuery("") 
+      setCustomResults(data.results)
+    } catch (err: any) {
+      setError("Failed to fetch custom search results")
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   const imageUrl = imageUrlFromListing(listing, parseInt(process.env.listingPhotoSize))[0]
 
@@ -218,6 +252,36 @@ const ApplicationConfirmation = () => {
             </div>
           </CardSection>
         )}
+
+          <CardSection divider="inset">
+            <Heading priority={2} size="lg" className="mb-4 text-black">
+              Is there something else you’re looking for?
+            </Heading>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={customQuery}
+                onChange={(e) => setCustomQuery(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded text-base"
+                placeholder="Describe the help you need..."
+              />
+              <Button variant="primary" onClick={handleCustomSearch} disabled={loading}>
+                {loading ? (
+                  <span className="loader border-t-2 border-white rounded-full w-4 h-4 inline-block animate-spin"></span>
+                ) : (
+                  "Search Resources"
+                )}
+              </Button>
+
+              {error && <p className="text-red-500">{error}</p>}
+
+              <CustomResults customResults={customResults} loading={loading} />
+
+
+
+            </div>
+          </CardSection>
+
                   
           <CardSection divider={"inset"}>
             <div className="markdown markdown-informational">
