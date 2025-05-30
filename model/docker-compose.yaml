@@ -3,3 +3,7 @@ services:
     build: ./app
     ports:
       - "5000:5000" # Expose port 5000 on host and container
+  semantic-search:
+    build: ./semantic_search
+    ports:
+      - "5001:5001"
