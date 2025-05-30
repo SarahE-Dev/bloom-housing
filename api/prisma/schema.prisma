@@ -224,12 +224,34 @@ model Applications {
   preferredUnitTypes           UnitTypes[]
   householdMember              HouseholdMember[]
   applicationLotteryPositions  ApplicationLotteryPositions[]
+  risk Risk?
 
   @@unique([listingId, confirmationCode])
   @@index([listingId])
   @@index([userId])
   @@map("applications")
 }
+
+model Risk {
+  id              String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  applicationId   String       @unique @map("application_id") @db.Uuid
+  riskProbability Float        @default(0.0) @map("risk_probability")
+  riskPrediction  Boolean      @default(false) @map("risk_prediction")
+  veteran         Boolean      @default(false) 
+  income          Float?       @default(0) 
+  disabled        Boolean      @default(false) 
+  numPeople       Int?         @default(1) @map("num_people")
+  age             Int?         @map("age")
+  benefits        Boolean      @default(false) 
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  application     Applications @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("risk")
+}
+
 
 // Note: [file_id, label] formerly max length 128
 model Assets {
