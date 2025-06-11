@@ -26,10 +26,7 @@ RUN pip install --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy application code
-COPY . .
-
-# Generate embeddings and provider data
-RUN python prepare_data.py
+COPY main.py . 
 
 # Create a non-root user for security
 RUN useradd -m appuser
