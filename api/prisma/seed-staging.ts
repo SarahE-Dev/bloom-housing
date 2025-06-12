@@ -45,29 +45,38 @@ export const stagingSeed = async (
   // Seed feature flags
   await createAllFeatureFlags(prismaClient);
   // create main jurisdiction with as many feature flags turned on as possible
-  const mainJurisdiction = await prismaClient.jurisdictions.create({
-    data: jurisdictionFactory(jurisdictionName, {
+  const mainJurisdiction = await prismaClient.jurisdictions.upsert({
+    where: { 
+      name: jurisdictionName || "Distinguished Suites"
+    },
+    update: {},
+    create: {
+      ...jurisdictionFactory(jurisdictionName || "Distinguished Suites"),
       listingApprovalPermissions: [UserRoleEnum.admin],
-      featureFlags: [
-        FeatureFlagEnum.enableHomeType,
-        FeatureFlagEnum.enableAccessibilityFeatures,
-        FeatureFlagEnum.enableUtilitiesIncluded,
-        FeatureFlagEnum.enableIsVerified,
-        FeatureFlagEnum.enableNeighborhoodAmenities,
-        FeatureFlagEnum.enableMarketingStatus,
-        FeatureFlagEnum.enableSection8Question,
-        FeatureFlagEnum.enableSingleUseCode,
-        FeatureFlagEnum.enableGeocodingPreferences,
-        FeatureFlagEnum.enableGeocodingRadiusMethod,
-        FeatureFlagEnum.enableListingOpportunity,
-        FeatureFlagEnum.enablePartnerDemographics,
-        FeatureFlagEnum.enablePartnerSettings,
-      ],
-    }),
+      featureFlags: {
+        connect: [
+          { name: FeatureFlagEnum.enableHomeType },
+          { name: FeatureFlagEnum.enableAccessibilityFeatures },
+          { name: FeatureFlagEnum.enableUtilitiesIncluded },
+          { name: FeatureFlagEnum.enableIsVerified },
+          { name: FeatureFlagEnum.enableNeighborhoodAmenities },
+          { name: FeatureFlagEnum.enableMarketingStatus },
+          { name: FeatureFlagEnum.enableSection8Question },
+          { name: FeatureFlagEnum.enableSingleUseCode },
+          { name: FeatureFlagEnum.enableGeocodingPreferences },
+          { name: FeatureFlagEnum.enableGeocodingRadiusMethod },
+          { name: FeatureFlagEnum.enableListingOpportunity },
+          { name: FeatureFlagEnum.enablePartnerDemographics },
+          { name: FeatureFlagEnum.enablePartnerSettings }
+        ]
+      }
+    }
   });
   // jurisdiction with unit groups enabled
-  const lakeviewJurisdiction = await prismaClient.jurisdictions.create({
-    data: jurisdictionFactory('Lakeview', {
+  const lakeviewJurisdiction = await prismaClient.jurisdictions.upsert({
+    where: { name: 'Lakeview' },
+    update: {},
+    create: jurisdictionFactory('Lakeview', {
       featureFlags: [
         FeatureFlagEnum.enableUnitGroups,
         FeatureFlagEnum.hideCloseListingButton,
@@ -90,8 +99,10 @@ export const stagingSeed = async (
     }),
   });
   // Basic configuration jurisdiction
-  const bridgeBayJurisdiction = await prismaClient.jurisdictions.create({
-    data: jurisdictionFactory('Bridge Bay', {
+  const bridgeBayJurisdiction = await prismaClient.jurisdictions.upsert({
+    where: { name: 'Bridge Bay' },
+    update: {},
+    create: jurisdictionFactory('Bridge Bay', {
       featureFlags: [
         FeatureFlagEnum.enableGeocodingPreferences,
         FeatureFlagEnum.enableGeocodingRadiusMethod,
@@ -102,15 +113,19 @@ export const stagingSeed = async (
     }),
   });
   // Jurisdiction with no feature flags enabled
-  const nadaHill = await prismaClient.jurisdictions.create({
-    data: jurisdictionFactory('Nada Hill', {
+  const nadaHill = await prismaClient.jurisdictions.upsert({
+    where: { name: 'Nada Hill' },
+    update: {},
+    create: jurisdictionFactory('Nada Hill', {
       featureFlags: [],
     }),
   });
 
   // create admin user
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: await userFactory({
       roles: { isAdmin: true },
       email: 'admin@example.com',
       confirmedAt: new Date(),
@@ -125,8 +140,10 @@ export const stagingSeed = async (
     }),
   });
   // create a jurisdictional admin
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'jurisdiction-admin@example.com' },
+    update: {},
+    create: await userFactory({
       roles: { isJurisdictionalAdmin: true },
       email: 'jurisdiction-admin@example.com',
       confirmedAt: new Date(),
@@ -135,8 +152,10 @@ export const stagingSeed = async (
     }),
   });
   // create a partner
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'partner@example.com' },
+    update: {},
+    create: await userFactory({
       roles: { isPartner: true },
       email: 'partner@example.com',
       confirmedAt: new Date(),
@@ -144,8 +163,10 @@ export const stagingSeed = async (
       acceptedTerms: true,
     }),
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'unverified@example.com' },
+    update: {},
+    create: await userFactory({
       roles: { isAdmin: true },
       email: 'unverified@example.com',
       confirmedAt: new Date(),
@@ -153,8 +174,10 @@ export const stagingSeed = async (
       acceptedTerms: false,
     }),
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'mfauser@bloom.com' },
+    update: {},
+    create: await userFactory({
       roles: { isAdmin: true },
       email: 'mfauser@bloom.com',
       confirmedAt: new Date(),
@@ -164,16 +187,20 @@ export const stagingSeed = async (
       singleUseCode: '12345',
     }),
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'public-user@example.com' },
+    update: {},
+    create: await userFactory({
       email: 'public-user@example.com',
       confirmedAt: new Date(),
       jurisdictionIds: [mainJurisdiction.id],
       password: 'abcdef',
     }),
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: `partner-user@example.com` },
+    update: {},
+    create: await userFactory({
       roles: {
         isAdmin: false,
         isPartner: true,
@@ -191,6 +218,26 @@ export const stagingSeed = async (
     }),
   });
   // add jurisdiction specific translations and default ones
+  // Clear existing translations to avoid unique constraint errors
+  await prismaClient.translations.deleteMany({
+    where: {
+      OR: [
+        {
+          jurisdictionId: mainJurisdiction.id,
+          language: LanguagesEnum.en,
+        },
+        {
+          jurisdictionId: null,
+          language: LanguagesEnum.es,
+        },
+        {
+          jurisdictionId: null,
+          language: LanguagesEnum.en,
+        },
+      ],
+    },
+  });
+  
   await prismaClient.translations.create({
     data: translationFactory(mainJurisdiction.id, mainJurisdiction.name),
   });
@@ -368,7 +415,18 @@ export const stagingSeed = async (
         workInCityQuestion,
         multiselectQuestionPrograms,
       ],
-      applications: [await applicationFactory(), await applicationFactory()],
+      applications: [
+        await applicationFactory(), 
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
     },
     {
       jurisdictionId: mainJurisdiction.id,
@@ -560,6 +618,18 @@ export const stagingSeed = async (
     {
       jurisdictionId: mainJurisdiction.id,
       listing: blueSkyApartments,
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
       units: [
         {
           amiPercentage: '30',
@@ -584,11 +654,35 @@ export const stagingSeed = async (
     {
       jurisdictionId: mainJurisdiction.id,
       listing: valleyHeightsSeniorCommunity,
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
     },
     {
       jurisdictionId: mainJurisdiction.id,
       listing: littleVillageApartments,
       multiselectQuestions: [workInCityQuestion],
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
     },
     {
       jurisdictionId: mainJurisdiction.id,
@@ -613,6 +707,10 @@ export const stagingSeed = async (
         await applicationFactory({
           multiselectQuestions: [workInCityQuestion],
         }),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
         await applicationFactory(),
       ],
       multiselectQuestions: [
@@ -733,6 +831,18 @@ export const stagingSeed = async (
     },
     {
       jurisdictionId: lakeviewJurisdiction.id,
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
       listing: {
         additionalApplicationSubmissionNotes: null,
         digitalApplication: true,
@@ -883,16 +993,19 @@ export const stagingSeed = async (
       const savedListing = await prismaClient.listings.create({
         data: listing,
       });
-      await prismaClient.userAccounts.create({
-        data: await userFactory({
+      const partnerEmail = `partner-user-${savedListing.name
+        .toLowerCase()
+        .replace(' ', '')}@example.com`;
+      await prismaClient.userAccounts.upsert({
+        where: { email: partnerEmail },
+        update: {},
+        create: await userFactory({
           roles: {
             isAdmin: false,
             isPartner: true,
             isJurisdictionalAdmin: false,
           },
-          email: `partner-user-${savedListing.name
-            .toLowerCase()
-            .replace(' ', '')}@example.com`,
+          email: partnerEmail,
           confirmedAt: new Date(),
           jurisdictionIds: [savedListing.jurisdictionId],
           acceptedTerms: true,

@@ -52,8 +52,10 @@ export const devSeeding = async (
       allowSingleUseCodeLogin: false,
     },
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: await userFactory({
       roles: { isAdmin: true },
       email: 'admin@example.com',
       confirmedAt: new Date(),
@@ -62,16 +64,20 @@ export const devSeeding = async (
       password: 'abcdef',
     }),
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'public-user@example.com' },
+    update: {},
+    create: await userFactory({
       email: 'public-user@example.com',
       confirmedAt: new Date(),
       jurisdictionIds: [jurisdiction.id],
       password: 'abcdef',
     }),
   });
-  await prismaClient.userAccounts.create({
-    data: await userFactory({
+  await prismaClient.userAccounts.upsert({
+    where: { email: 'jurisdiction-admin@example.com' },
+    update: {},
+    create: await userFactory({
       roles: { isJurisdictionalAdmin: true },
       email: 'jurisdiction-admin@example.com',
       confirmedAt: new Date(),
@@ -95,33 +101,51 @@ export const devSeeding = async (
   const multiselectQuestions = await Promise.all(
     await createMultiselect(jurisdiction.id, prismaClient),
   );
-  await prismaClient.featureFlags.create({
-    data: featureFlagFactory(
-      'enableRegions',
-      false,
-      'When true, the region can be defined for the building address',
-      [jurisdiction.id],
-    ),
+
+  // Create feature flags if they don't exist
+  const existingFlags = await prismaClient.featureFlags.findMany({
+    where: {
+      name: {
+        in: ['enableRegions', 'enableIsVerified', 'enableSection8Question']
+      }
+    }
   });
+  const existingFlagNames = new Set(existingFlags.map(f => f.name));
+
+  if (!existingFlagNames.has('enableRegions')) {
+    await prismaClient.featureFlags.create({
+      data: featureFlagFactory(
+        'enableRegions',
+        false,
+        'When true, the region can be defined for the building address',
+        [jurisdiction.id],
+      ),
+    });
+  }
+
   await reservedCommunityTypeFactoryAll(jurisdiction.id, prismaClient);
 
-  await prismaClient.featureFlags.create({
-    data: featureFlagFactory(
-      'enableIsVerified',
-      false,
-      'When true, the listing can ba have its contents manually verified by a user',
-      [jurisdiction.id],
-    ),
-  });
+  if (!existingFlagNames.has('enableIsVerified')) {
+    await prismaClient.featureFlags.create({
+      data: featureFlagFactory(
+        'enableIsVerified',
+        false,
+        'When true, the listing can ba have its contents manually verified by a user',
+        [jurisdiction.id],
+      ),
+    });
+  }
 
-  await prismaClient.featureFlags.create({
-    data: featureFlagFactory(
-      'enableSection8Question',
-      false,
-      'When true, the Section 8 listing data will be visible',
-      [jurisdiction.id],
-    ),
-  });
+  if (!existingFlagNames.has('enableSection8Question')) {
+    await prismaClient.featureFlags.create({
+      data: featureFlagFactory(
+        'enableSection8Question',
+        false,
+        'When true, the Section 8 listing data will be visible',
+        [jurisdiction.id],
+      ),
+    });
+  }
 
   for (let index = 0; index < LISTINGS_TO_SEED; index++) {
     const applications = [];

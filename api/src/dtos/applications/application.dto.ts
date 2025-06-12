@@ -31,6 +31,7 @@ import { Demographic } from './demographic.dto';
 import { HouseholdMember } from './household-member.dto';
 import { UnitType } from '../unit-types/unit-type.dto';
 import { ApplicationLotteryPosition } from './application-lottery-position.dto';
+import { Risk } from './risk.dto';
 
 export class Application extends AbstractDTO {
   @Expose()
@@ -276,9 +277,9 @@ export class Application extends AbstractDTO {
   @ApiProperty({ type: ApplicationLotteryPosition, isArray: true })
   applicationLotteryPositions: ApplicationLotteryPosition[];
 
-  @ApiProperty({ required: false })
-  riskPrediction?: string;
-
-  @ApiProperty({ required: false })
-  riskProbability?: number;
+  @Expose()
+  @ValidateNested({ groups: [ValidationsGroupsEnum.default] })
+  @Type(() => Risk)
+  @ApiProperty({ type: Risk, required: false })
+  risk?: Risk;
 }

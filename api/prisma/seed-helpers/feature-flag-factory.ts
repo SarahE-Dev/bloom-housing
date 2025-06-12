@@ -4,11 +4,23 @@ import { randomAdjective, randomName } from './word-generator';
 import { featureFlagMap } from '../../src/enums/feature-flags/feature-flags-enum';
 
 export const createAllFeatureFlags = async (prismaClient: PrismaClient) => {
-  await prismaClient.featureFlags.createMany({
-    data: featureFlagMap.map((flag) => {
-      return { ...flag, active: true };
-    }),
+  // First get all existing feature flags
+  const existingFlags = await prismaClient.featureFlags.findMany({
+    select: { name: true },
   });
+  const existingFlagNames = new Set(existingFlags.map(f => f.name));
+
+  // Only create flags that don't exist yet
+  const flagsToCreate = featureFlagMap.filter(flag => !existingFlagNames.has(flag.name));
+  
+  if (flagsToCreate.length > 0) {
+    await prismaClient.featureFlags.createMany({
+      data: flagsToCreate.map((flag) => {
+        return { ...flag, active: true };
+      }),
+      skipDuplicates: true,
+    });
+  }
 };
 
 export const attachJurisdictionToFlags = async (
