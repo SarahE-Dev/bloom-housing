@@ -109,6 +109,33 @@ export const applicationFactory = async (optionalParams?: {
     additionalPhoneNumber: additionalPhone ? '(456) 456-4564' : undefined,
     additionalPhone,
     additionalPhoneNumberType: additionalPhone ? 'cell' : undefined,
+    risk: {
+      create: {
+        riskProbability: (() => {
+          const rand = Math.random();
+          if (rand < 0.6) return Math.random() * 0.4;
+          if (rand < 0.9) return 0.4 + (Math.random() * 0.3);
+          return 0.7 + (Math.random() * 0.3);
+        })(),
+        riskPrediction: Math.random() > 0.5,
+        veteran: Math.random() < 0.07,
+        income: (() => {
+          const baseIncome = 30000;
+          const multiplier = Math.exp(Math.random() * 2);
+          return Math.floor(baseIncome * multiplier);
+        })(),
+        disabled: Math.random() < 0.15,
+        numPeople: Math.floor(Math.random() * Math.random() * 6) + 1,
+        age: (() => {
+          const rand = Math.random();
+          if (rand < 0.25) return Math.floor(18 + Math.random() * 12);
+          if (rand < 0.7) return Math.floor(31 + Math.random() * 19);
+          if (rand < 0.95) return Math.floor(51 + Math.random() * 19);
+          return Math.floor(71 + Math.random() * 20);
+        })(),
+        benefits: Math.random() < 0.2,
+      },
+    },
   };
 };
 
