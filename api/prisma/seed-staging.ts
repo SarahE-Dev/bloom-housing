@@ -218,6 +218,26 @@ export const stagingSeed = async (
     }),
   });
   // add jurisdiction specific translations and default ones
+  // Clear existing translations to avoid unique constraint errors
+  await prismaClient.translations.deleteMany({
+    where: {
+      OR: [
+        {
+          jurisdictionId: mainJurisdiction.id,
+          language: LanguagesEnum.en,
+        },
+        {
+          jurisdictionId: null,
+          language: LanguagesEnum.es,
+        },
+        {
+          jurisdictionId: null,
+          language: LanguagesEnum.en,
+        },
+      ],
+    },
+  });
+  
   await prismaClient.translations.create({
     data: translationFactory(mainJurisdiction.id, mainJurisdiction.name),
   });
@@ -395,7 +415,18 @@ export const stagingSeed = async (
         workInCityQuestion,
         multiselectQuestionPrograms,
       ],
-      applications: [await applicationFactory(), await applicationFactory()],
+      applications: [
+        await applicationFactory(), 
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
     },
     {
       jurisdictionId: mainJurisdiction.id,
@@ -587,6 +618,18 @@ export const stagingSeed = async (
     {
       jurisdictionId: mainJurisdiction.id,
       listing: blueSkyApartments,
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
       units: [
         {
           amiPercentage: '30',
@@ -611,11 +654,35 @@ export const stagingSeed = async (
     {
       jurisdictionId: mainJurisdiction.id,
       listing: valleyHeightsSeniorCommunity,
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
     },
     {
       jurisdictionId: mainJurisdiction.id,
       listing: littleVillageApartments,
       multiselectQuestions: [workInCityQuestion],
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
     },
     {
       jurisdictionId: mainJurisdiction.id,
@@ -640,6 +707,10 @@ export const stagingSeed = async (
         await applicationFactory({
           multiselectQuestions: [workInCityQuestion],
         }),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
         await applicationFactory(),
       ],
       multiselectQuestions: [
@@ -760,6 +831,18 @@ export const stagingSeed = async (
     },
     {
       jurisdictionId: lakeviewJurisdiction.id,
+      applications: [
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+        await applicationFactory(),
+      ],
       listing: {
         additionalApplicationSubmissionNotes: null,
         digitalApplication: true,
@@ -910,16 +993,19 @@ export const stagingSeed = async (
       const savedListing = await prismaClient.listings.create({
         data: listing,
       });
-      await prismaClient.userAccounts.create({
-        data: await userFactory({
+      const partnerEmail = `partner-user-${savedListing.name
+        .toLowerCase()
+        .replace(' ', '')}@example.com`;
+      await prismaClient.userAccounts.upsert({
+        where: { email: partnerEmail },
+        update: {},
+        create: await userFactory({
           roles: {
             isAdmin: false,
             isPartner: true,
             isJurisdictionalAdmin: false,
           },
-          email: `partner-user-${savedListing.name
-            .toLowerCase()
-            .replace(' ', '')}@example.com`,
+          email: partnerEmail,
           confirmedAt: new Date(),
           jurisdictionIds: [savedListing.jurisdictionId],
           acceptedTerms: true,
