@@ -20,15 +20,65 @@ export const atRiskResources = [
   {
     label: "Emergency Shelters & Hotel Vouchers",
     href: "https://www.alamedacountysocialservices.org/our-services/Shelter-and-Housing/Other-Support/emergency-shelters",
-    description: "Temporary shelter options for those in urgent need of a safe place to stay. Call 2-1-1 or text your ZIP code to 898211",
+    description:
+      "Temporary shelter options for those in urgent need of a safe place to stay. Call 2-1-1 or text your ZIP code to 898211",
+  },
+  {
+    label: "Safe Parking Program (San Leandro Fairmont Campus)",
+    href: "https://homelessness.acgov.org/ac-housing-resource.page",
+    description:
+      "A secure overnight option for those living in vehicles, with access to support services. Call 2-1-1 for availability and intake",
+  },
+  {
+    label: "Crisis Support Services (Mental Health Hotline)",
+    href: "https://www.achch.org/get-help.html",
+    description:
+      "24/7 confidential help for emotional or mental health support. Call (800) 309-2131",
+  },
+  {
+    label: "Winter Emergency Resources & Warming Centers",
+    href: "https://www.achch.org/winter-emergency-resources.html",
+    description: "Stay warm and safe with seasonal resources during colder months.",
+  },
+  {
+    label: "Alameda Homeless Hotline",
+    href: "https://www.alamedaca.gov/CITYWIDE-PROJECTS/Programs-and-Services-Addressing-Homelessness",
+    description:
+      "Helps connect you with food, shelter, and health services in your area. Call (510) 522-4663 or 2-1-1 after hours",
   },
 ]
+
 
 export const notAtRiskResources = [
   {
     label: "Coordinated Entry System (CES)",
     href: "https://alamedakids.org/resource-directory/search-resource-directory.php?by=service&id=18",
-    description: "Helps prioritize access to housing and supportive services. Start by calling 2-1-1",
+    description:
+      "Helps prioritize access to housing and supportive services. Start by calling 2-1-1",
+  },
+  {
+    label: "CalWORKs Housing Assistance",
+    href: "https://www.alamedacountysocialservices.org/our-services/Shelter-and-Housing/CalWORKs-housing-assistance/index",
+    description:
+      "Financial assistance for rent, utilities, and deposits for eligible families. Apply by calling (510) 263-2420 or 1-888-999-4772",
+  },
+  {
+    label: "CalAIM Housing Community Supports",
+    href: "https://homelessness.acgov.org/housing-community-supports.page",
+    description:
+      "Combines health coverage with housing-related support like tenancy navigation.",
+  },
+  {
+    label: "Bay Area Community Services (BACS)",
+    href: "https://bayareacs.org/alameda-county/",
+    description:
+      "Offers mental health and housing support with individualized case management. Call 1-800-491-9099",
+  },
+  {
+    label: "Alameda County Community Food Bank",
+    href: "https://www.alamedacounty.info/food-banks",
+    description:
+      "Access groceries and meal programs for individuals and families.",
   },
 ]
 
@@ -61,15 +111,6 @@ const ApplicationConfirmation = () => {
     `
     document.head.appendChild(script2)
   }, [GA_ID])
-
-  // Page view tracking
-  useEffect(() => {
-    pushGtmEvent<PageView>({
-      event: "pageView",
-      pageTitle: "Application - Confirmation",
-      status: profile ? UserStatus.LoggedIn : UserStatus.NotLoggedIn,
-    })
-  }, [profile])
 
   // Load risk prediction from localStorage
   useEffect(() => {
