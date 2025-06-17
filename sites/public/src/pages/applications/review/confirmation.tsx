@@ -90,7 +90,7 @@ const ApplicationConfirmation = () => {
   const { initialStateLoaded, profile } = useContext(AuthContext)
   const [riskPrediction, setRiskPrediction] = useState<string | null>(null)
   const router = useRouter()
-
+  console.log(application)
   const [customQuery, setCustomQuery] = useState("")
   const [loading, setLoading] = useState(false)
   const [customResults, setCustomResults] = useState<any>(null)
@@ -186,7 +186,8 @@ const ApplicationConfirmation = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedPrediction = localStorage.getItem("riskPrediction")
-      setRiskPrediction(storedPrediction)
+      const label = storedPrediction === 'true' ? 'At risk' : 'Not at risk'
+      setRiskPrediction(label)
     }
   }, [])
 

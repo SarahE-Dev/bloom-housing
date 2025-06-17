@@ -39,7 +39,7 @@ const Layout = (props) => {
       href: "/settings",
     })
   }
-  if (profile) {
+  if (profile?.userRoles?.isAdmin || profile?.userRoles?.isJurisdictionalAdmin) {
     menuLinks.push({
       title: t("nav.riskDashboard"),
       href: "/application/risk-dashboard",
