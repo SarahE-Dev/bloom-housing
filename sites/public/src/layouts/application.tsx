@@ -11,6 +11,7 @@ import { HeaderLink, SiteHeader } from "../patterns/SiteHeader"
 import styles from "./application.module.scss"
 import { User } from "@bloom-housing/shared-helpers/src/types/backend-swagger"
 import { ToastProps } from "@bloom-housing/ui-seeds/src/blocks/Toast"
+import FloatingHouseIcon from "../components/shared/FloatingHouseIcon"
 
 const getInMaintenance = () => {
   let inMaintenance = false
@@ -234,6 +235,7 @@ const Layout = (props) => {
       </div>
 
       <CustomSiteFooter />
+      <FloatingHouseIcon />
     </div>
   )
 }
