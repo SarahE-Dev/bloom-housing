@@ -100,22 +100,26 @@ const ApplicationConfirmation = () => {
     setLoading(true)
     setError(null)
     setCustomResults(null)
-
+  
     try {
       const response = await fetch('http://localhost:5001/search', {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ query: customQuery, top_n: 5 }), 
+        mode: 'cors',
       })
 
+  
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
+  
       const data = await response.json()
-      setCustomQuery("") 
-      setCustomResults(data.results)
+      console.log(data)
+      setCustomResults(data)
+      setCustomQuery("")
     } catch (err: any) {
       setError("Failed to fetch custom search results")
       console.error(err)
@@ -123,6 +127,7 @@ const ApplicationConfirmation = () => {
       setLoading(false)
     }
   }
+  
 
 
   const imageUrl = imageUrlFromListing(listing, parseInt(process.env.listingPhotoSize))[0]
