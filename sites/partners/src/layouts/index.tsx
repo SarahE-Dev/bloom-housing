@@ -41,6 +41,12 @@ const Layout = (props) => {
   }
   if (profile) {
     menuLinks.push({
+      title: t("nav.riskDashboard"),
+      href: "/application/risk-dashboard",
+    })
+  }
+  if (profile) {
+    menuLinks.push({
       title: t("nav.signOut"),
       onClick: async () => {
         await router.push("/sign-in")

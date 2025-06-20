@@ -779,6 +779,7 @@
   "nav.myDashboard": "My Dashboard",
   "nav.mySettings": "My Settings",
   "nav.properties": "Properties",
+  "nav.riskDashboard": "Risk Analytics", 
   "nav.signIn": "Sign In",
   "nav.signInMFA.addNumber": "Add a phone number",
   "nav.signInMFA.addNumberSecondaryTitle": "Enter your phone number and we'll send you a code that you can use to sign in.",

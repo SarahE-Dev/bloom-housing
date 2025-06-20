@@ -180,6 +180,19 @@ export const view: Partial<
         numBedrooms: true,
       },
     },
+    risk: {
+      select: {
+        id: true,
+        riskProbability: true,
+        riskPrediction: true,
+        veteran: true,
+        income: true,
+        disabled: true,
+        numPeople: true,
+        age: true,
+        benefits: true,
+      },
+    },
   },
 };
 
@@ -303,7 +316,18 @@ export class ApplicationService {
       skip: calculateSkip(params.limit, params.page),
       take: calculateTake(params.limit),
       orderBy: buildOrderByForApplications([params.orderBy], [params.order]),
-      include: view[params.listingId ? 'partnerList' : 'base'],
+      include: {
+        ...view[params.listingId ? 'partnerList' : 'base'],
+        listings: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            reviewOrderType: true,
+          },
+        },
+        risk: true,
+      },
       where: whereClause,
     });
 
@@ -473,6 +497,14 @@ export class ApplicationService {
       toReturn.push({
         listingId: params.listingId,
       });
+    } else {
+      // When no listingId is provided, we want to fetch all applications
+      // but we need to ensure we have the listing data for proper display
+      toReturn.push({
+        listings: {
+          isNot: null,
+        },
+      });
     }
     if (params.search) {
       const searchFilter: Prisma.StringFilter = {
@@ -611,7 +643,6 @@ export class ApplicationService {
       },
       include: {
         jurisdictions: true,
-        // multiselect questions and address is needed for geocoding
         listingMultiselectQuestions: {
           include: {
             multiselectQuestions: true,
@@ -620,11 +651,9 @@ export class ApplicationService {
         listingsBuildingAddress: true,
       },
     });
-    // if its a public submission
+
     if (forPublic) {
-      // SubmissionDate is time the application was created for public
       dto.submissionDate = new Date();
-      // if there is no common app or submission is after the application due date
       if (
         !(listing.digitalApplication && listing.commonDigitalApplication) ||
         (listing?.applicationDueDate &&
@@ -636,13 +665,31 @@ export class ApplicationService {
       }
     }
 
-    console.log('applicant', dto);
-
     const { predictRisk, ...applicationData } = dto;
 
-    const rawApplication = await this.prisma.applications.create({
+    // Create the application first
+    const createdApplication = await this.prisma.applications.create({
       data: {
-        ...applicationData,
+        // Spread the basic application data, excluding nested objects
+        appUrl: applicationData.appUrl,
+        additionalPhone: applicationData.additionalPhone,
+        additionalPhoneNumber: applicationData.additionalPhoneNumber,
+        additionalPhoneNumberType: applicationData.additionalPhoneNumberType,
+        contactPreferences: applicationData.contactPreferences,
+        householdSize: applicationData.householdSize,
+        housingStatus: applicationData.housingStatus,
+        sendMailToMailingAddress: applicationData.sendMailToMailingAddress,
+        householdExpectingChanges: applicationData.householdExpectingChanges,
+        householdStudent: applicationData.householdStudent,
+        incomeVouchers: applicationData.incomeVouchers,
+        income: applicationData.income,
+        incomePeriod: applicationData.incomePeriod,
+        status: applicationData.status,
+        language: applicationData.language,
+        acceptedTerms: applicationData.acceptedTerms,
+        submissionType: applicationData.submissionType,
+        submissionDate: applicationData.submissionDate,
+        reviewStatus: applicationData.reviewStatus,
         confirmationCode: this.generateConfirmationCode(),
         applicant: applicationData.applicant
           ? {
@@ -705,13 +752,6 @@ export class ApplicationService {
               },
             }
           : undefined,
-        listings: applicationData.listings
-          ? {
-              connect: {
-                id: applicationData.listings.id,
-              },
-            }
-          : undefined,
         demographics: applicationData.demographics
           ? {
               create: {
@@ -754,31 +794,23 @@ export class ApplicationService {
               })),
             }
           : undefined,
+        listings: {
+          connect: {
+            id: applicationData.listings.id,
+          },
+        },
         programs: applicationData.programs as unknown as Prisma.JsonArray,
         preferences: applicationData.preferences as unknown as Prisma.JsonArray,
-        userAccounts: requestingUser
-          ? {
-              connect: {
-                id: requestingUser.id,
-              },
-            }
-          : undefined,
       },
-      include: view.details,
+      include: {
+        ...view.details,
+        risk: true,
+      },
     });
 
-
-    const mappedApplication = mapTo(Application, rawApplication);
-    if (dto.applicant.emailAddress && forPublic) {
-      this.emailService.applicationConfirmation(
-        mapTo(Listing, listing),
-        mappedApplication,
-        listing.jurisdictions?.publicUrl,
-      );
-    }
-    if (dto.predictRisk) {
+    // If risk prediction is requested, calculate and save it
+    if (predictRisk) {
       try {
-        // Use helper functions
         const features = mapDtoToModelInput(dto);
         const response = await getModelPrediction(
           this.httpService,
@@ -787,34 +819,53 @@ export class ApplicationService {
 
         const { prediction, probability } = response;
 
-        mappedApplication.riskPrediction = prediction;
-        mappedApplication.riskProbability = probability;
-        
-        console.log(`Risk score calculated for application ${mappedApplication.id}: ${mappedApplication.riskPrediction}, Risk probability: ${mappedApplication.riskProbability}`);
+        // Create the risk record
+        await this.prisma.risk.create({
+          data: {
+            applicationId: createdApplication.id,
+            riskProbability: probability,
+            riskPrediction: prediction === 'At Risk',
+            veteran: features.veteran,
+            income: features.income,
+            disabled: features.disabled,
+            numPeople: features.num_people,
+            age: features.age,
+            benefits: features.benefits,
+          },
+        });
+
+        console.log(`Risk score saved for application ${createdApplication.id}: prediction=${prediction}, probability=${probability}`);
       } catch (error) {
         console.error('Risk score processing failed:', error);
       }
     } else {
-      console.log(`Risk prediction skipped for application ${mappedApplication.id} as per user preference`);
+      console.log(`Risk prediction skipped for application ${createdApplication.id} as per user preference`);
     }
+
     // Update the lastApplicationUpdateAt to now after every submission
     await this.updateListingApplicationEditTimestamp(listing.id);
+
+    // Fetch the complete application with all required relations
+    const completeApplication = await this.prisma.applications.findUnique({
+      where: { id: createdApplication.id },
+      include: view.details,
+    });
+
+    const application = mapTo(Application, completeApplication);
 
     // Calculate geocoding preferences after save and email sent
     if (listing.jurisdictions?.enableGeocodingPreferences) {
       try {
         void this.geocodingService.validateGeocodingPreferences(
-          mappedApplication,
+          application,
           mapTo(Listing, listing),
         );
       } catch (e) {
-        // If the geocoding fails it should not prevent the request from completing so
-        // catching all errors here
         console.warn('error while validating geocoding preferences');
       }
     }
 
-    return mappedApplication;
+    return application;
   }
 
   /*
@@ -841,13 +892,14 @@ export class ApplicationService {
       },
     });
 
+    const { risk, ...updateData } = dto;
     const res = await this.prisma.applications.update({
       where: {
         id: dto.id,
       },
       include: view.details,
       data: {
-        ...dto,
+        ...updateData,
         id: undefined,
         applicant: dto.applicant
           ? {
