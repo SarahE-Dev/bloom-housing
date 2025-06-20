@@ -93,8 +93,9 @@ const ApplicationTerms = () => {
           // If the user opted in to risk prediction, log the result and probability
           // Otherwise, log that the prediction was not requested
           if (predictRisk) {
-            console.log(`Risk prediction returned from server: ${result.riskPrediction}, Risk probability: ${result.riskProbability}`);
-            localStorage.setItem("riskPrediction", result.riskPrediction);
+            console.log(`Risk prediction returned from server: ${result.risk.riskPrediction}, Risk probability: ${result.risk.riskProbability}`);
+            console.log(result)
+            localStorage.setItem("riskPrediction", result.risk.riskPrediction);
           } else {
             console.log('Risk prediction was not requested');
           }

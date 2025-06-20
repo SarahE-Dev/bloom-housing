@@ -19,6 +19,10 @@ def generate_and_save_data():
     output_embeddings_path = os.path.join(BASE_DIR, "embeddings.npy")
 
     try:
+        logger.info(f"Loading providers data from {output_providers_path}...")
+        with open(output_providers_path, "r") as f:
+            providers = json.load(f)
+
         logger.info(f"Loading sentence transformer model: {model_name}")
         model = SentenceTransformer(model_name)
 
@@ -40,7 +44,6 @@ def generate_and_save_data():
     except Exception as e:
         logger.critical(f"Failed during data preparation: {e}")
         raise
-
 
 if __name__ == "__main__":
     logger.info("Starting data preparation process...")

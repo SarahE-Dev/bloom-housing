@@ -51,6 +51,7 @@ export class JurisdictionService {
     } else if (jurisdictionName) {
       toReturn.name = {
         equals: jurisdictionName,
+        mode: 'insensitive',
       };
     }
     return toReturn;
