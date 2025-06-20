@@ -6,4 +6,7 @@ services:
   semantic-search:
     build: ./semantic_search
     ports:
-      - "5001:5001"
+      - "5001:5001" # Expose port 5001 on host and container
+    volumes:
+      - ./semantic_search/resources/providers.json:/app/providers.json
+      - ./semantic_search/resources/embeddings.npy:/app/embeddings.npy
