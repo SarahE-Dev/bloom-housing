@@ -92,7 +92,6 @@ const RiskScoreDashboard = () => {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [selectedListing, setSelectedListing] = useState<string>("all")
-  const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>("all")
   const [selectedState, setSelectedState] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -114,38 +113,58 @@ const RiskScoreDashboard = () => {
   // Extract unique values for filters
   const filterOptions = useMemo(() => {
     if (!applications?.length) {
-      return { listings: [], jurisdictions: [], states: [] }
+      return { listings: [], states: [] }
     }
 
     const listings = new Set<string>()
-    const jurisdictions = new Set<string>()
     const states = new Set<string>()
 
     console.log('=== FILTER OPTIONS DEBUG ===')
+    console.log('Total applications:', applications.length)
+    
+    // Track missing data for debugging
+    let missingListingCount = 0
+    let missingStateCount = 0
+    
     applications.forEach((app: any, index: number) => {
-      if (index < 3) { // Log first 3 applications for debugging
-        console.log(`App ${index}:`, {
-          listingName: app.listings?.name,
-          jurisdictionName: app.listings?.jurisdictions?.name,
-          state: app.applicant?.applicantAddress?.state,
-          fullListing: app.listings,
-        })
+      // Add listing name if available
+      if (app.listings?.name) {
+        listings.add(app.listings.name)
+      } else {
+        missingListingCount++
       }
       
-      if (app.listings?.name) listings.add(app.listings.name)
-      if (app.listings?.jurisdictions?.name) jurisdictions.add(app.listings.jurisdictions.name)
-      if (app.applicant?.applicantAddress?.state) states.add(app.applicant.applicantAddress.state)
+      // Add state if available
+      if (app.applicant?.applicantAddress?.state) {
+        states.add(app.applicant.applicantAddress.state)
+      } else {
+        missingStateCount++
+      }
+      
+      // Log detailed info for first few applications
+      if (index < 3) {
+        console.log(`App ${index}:`, {
+          id: app.id,
+          confirmationCode: app.confirmationCode,
+          listingName: app.listings?.name || 'MISSING',
+          state: app.applicant?.applicantAddress?.state || 'MISSING',
+          listingId: app.listings?.id,
+        })
+      }
+    })
+
+    console.log('Missing data counts:', {
+      missingListings: missingListingCount,
+      missingStates: missingStateCount
     })
 
     console.log('Filter options found:', {
       listings: Array.from(listings),
-      jurisdictions: Array.from(jurisdictions),
       states: Array.from(states)
     })
 
     return {
       listings: Array.from(listings).sort(),
-      jurisdictions: Array.from(jurisdictions).sort(),
       states: Array.from(states).sort()
     }
   }, [applications])
@@ -165,16 +184,22 @@ const RiskScoreDashboard = () => {
       
       if (!hasRiskData) return false // Exclude applications without risk data
       
-      const matchesListing = selectedListing === "all" || app.listings?.name === selectedListing
-      const matchesJurisdiction = selectedJurisdiction === "all" || app.listings?.jurisdictions?.name === selectedJurisdiction
-      const matchesState = selectedState === "all" || app.applicant?.applicantAddress?.state === selectedState
+      // Check if listing matches filter
+      const matchesListing = selectedListing === "all" || 
+        (app.listings?.name && app.listings.name === selectedListing)
+      
+      // Check if state matches filter
+      const matchesState = selectedState === "all" || 
+        (app.applicant?.applicantAddress?.state && app.applicant.applicantAddress.state === selectedState)
+      
+      // Check if search term matches
       const matchesSearch = !searchTerm || 
         `${app.applicant?.firstName || ''} ${app.applicant?.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.confirmationCode?.toLowerCase().includes(searchTerm.toLowerCase())
 
-      return matchesListing && matchesJurisdiction && matchesState && matchesSearch
+      return matchesListing && matchesState && matchesSearch
     })
-  }, [applications, selectedListing, selectedJurisdiction, selectedState, searchTerm])
+  }, [applications, selectedListing, selectedState, searchTerm])
 
   // Process risk data for analytics
   const riskAnalytics = useMemo(() => {
@@ -351,7 +376,6 @@ const RiskScoreDashboard = () => {
           name: `${app.applicant?.firstName || ''} ${app.applicant?.lastName || ''}`.trim() || 'N/A',
           confirmationCode: app.confirmationCode || 'N/A',
           listingName: app.listings?.name || 'Unknown Listing',
-          jurisdiction: app.listings?.jurisdictions?.name || 'N/A',
           state: app.applicant?.applicantAddress?.state || 'N/A',
           riskScore: risk?.riskProbability ? Math.round(risk.riskProbability * 100) : null,
           riskLevel,
@@ -570,8 +594,8 @@ const RiskScoreDashboard = () => {
             <Filter className="w-5 h-5 text-gray-600" />
             <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">Listing</label>
               <select
                 value={selectedListing}
@@ -584,20 +608,7 @@ const RiskScoreDashboard = () => {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Jurisdiction</label>
-              <select
-                value={selectedJurisdiction}
-                onChange={(e) => setSelectedJurisdiction(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Jurisdictions</option>
-                {filterOptions.jurisdictions.map(jurisdiction => (
-                  <option key={jurisdiction} value={jurisdiction}>{jurisdiction}</option>
-                ))}
-              </select>
-            </div>
-            <div>
+            <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
               <select
                 value={selectedState}
@@ -610,7 +621,7 @@ const RiskScoreDashboard = () => {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -1027,7 +1038,6 @@ const RiskScoreDashboard = () => {
                       { key: 'name', label: 'Name' },
                       { key: 'confirmationCode', label: 'Confirmation' },
                       { key: 'listingName', label: 'Listing' },
-                      { key: 'jurisdiction', label: 'Jurisdiction' },
                       { key: 'state', label: 'State' },
                       { key: 'riskScore', label: 'Risk Score' },
                       { key: 'riskLevel', label: 'Risk Level' },
@@ -1061,9 +1071,6 @@ const RiskScoreDashboard = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {app.listingName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {app.jurisdiction}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {app.state}
