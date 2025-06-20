@@ -1,0 +1,47 @@
+.floatingContainer {
+  position: fixed;
+  bottom: 4rem;
+  right: 2.5rem;
+  z-index: 1000;
+}
+
+.floatingButton {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background-color: #0077b6;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease-in-out;
+  z-index: 1001;
+
+  &:hover {
+    transform: scale(1.1);
+    background-color: #005f92;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.3);
+  }
+
+  &.active {
+    transform: scale(1.1);
+    background-color: #005f92;
+  }
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+  transition: transform 0.3s ease-in-out;
+}
+
+.active .icon {
+  transform: rotate(180deg);
+} 
