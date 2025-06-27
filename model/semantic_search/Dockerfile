@@ -27,9 +27,6 @@ RUN pip install --upgrade pip \
 # Copy application code
 COPY . .
 
-# Generate embeddings and provider data
-RUN python prepare_data.py
-
 # Create a non-root user for security
 RUN useradd -m appuser
 USER appuser

@@ -12,7 +12,7 @@ import { Button, Dialog } from "@bloom-housing/ui-seeds"
 import { NavigationContext, t } from "@bloom-housing/ui-components"
 import { MessageContext } from "../utilities/MessageContext"
 
-const PROMPT_TIMEOUT = 60000
+const PROMPT_TIMEOUT = 3600000
 const events = ["mousemove", "keypress", "scroll"]
 
 function useIdleTimeout(timeoutMs: number, onTimeout: () => void) {

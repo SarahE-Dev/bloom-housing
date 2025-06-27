@@ -245,10 +245,10 @@ const RiskScoreDashboard = () => {
       // Determine risk level
       let riskLevel = 'low'
       if (risk?.riskProbability !== undefined && risk?.riskProbability !== null) {
-        if (risk.riskProbability < 0.4) {
+        if (risk.riskProbability < 0.3) {
           lowRisk++
           riskLevel = 'low'
-        } else if (risk.riskProbability < 0.7) {
+        } else if (risk.riskProbability < 0.50) {
           mediumRisk++
           riskLevel = 'medium'
         } else {
