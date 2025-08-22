@@ -8,7 +8,6 @@ services:
     image: qdrant/qdrant:latest
     ports:
       - "6333:6333" # Expose port 6333 on host and container
-      - "6334:6334" # Expose port 6334 on host and container
     volumes:
       - ./qdrant_data:/qdrant/storage
 
@@ -17,6 +16,7 @@ services:
     depends_on:
       - qdrant
     ports:
-      - "5001:5001"
+      - "5001:5001" # Expose port 5001 on host and container
     environment:
       - QDRANT_HOST=qdrant
+    command: sh -c "python prepare_data.py && gunicorn --bind 0.0.0.0:5001 main:app"

@@ -1,4 +1,5 @@
 .venv/
+qdrant_data/
 *.pkl
 *.csv
 __pycache__/

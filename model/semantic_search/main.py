@@ -1,11 +1,12 @@
 import json
 import logging
 import os
+
 import numpy as np
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 # Setup logging
@@ -21,42 +22,33 @@ logger = setup_logger()
 # Base directory of this script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROVIDERS_PATH = os.path.join(BASE_DIR, "providers.json")  # Path to saved providers
-EMBEDDINGS_PATH = os.path.join(BASE_DIR, "embeddings.npy")  # Path to saved embeddings
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+MODEL_NAME = "all-MiniLM-L6-v2"
+QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
+COLLECTION_NAME = "service_providers"
+
 
 # Load model and create embeddings on startup
-def load_model_and_data():
-    model_name = "all-MiniLM-L6-v2"
+def load_model_and_client():
     try:
-        logger.info(f"Loading sentence transformer model: {model_name}")
-        model = SentenceTransformer(model_name)
+        logger.info(f"Loading sentence transformer model: {MODEL_NAME}")
+        model = SentenceTransformer(MODEL_NAME)
 
-        logger.info(f"Loading providers data from {PROVIDERS_PATH}...")
-        with open(PROVIDERS_PATH, "r") as f:
-            providers = json.load(f)
-        logger.info("Providers data loaded.")
+        logger.info(f"Connecting to Qdrant at {QDRANT_HOST}")
+        client = QdrantClient(host=QDRANT_HOST, port=6333)
 
-        logger.info(f"Loading embeddings from {EMBEDDINGS_PATH}...")
-        embeddings = np.load(EMBEDDINGS_PATH)
-        logger.info(f"Successfully loaded embeddings with shape: {embeddings.shape}")
-
-        return model, providers, embeddings
-    except FileNotFoundError:
-        logger.critical(f"Data files not found. Please run prepare_data.py first.")
-        raise
+        return model, client
     except Exception as e:
-        logger.critical(f"Failed to load model or data: {e}")
+        logger.critical(f"Failed to load model or connect to QDRANT: {e}")
         raise
 
 
 # Load model and embeddings on startup
 try:
-    model, providers, embeddings = (
-        load_model_and_data()
-    )  # Modified to load providers as well
+    model, client = load_model_and_client()  # Modified to load providers as well
 except Exception as e:
     logger.critical(f"Application startup failed: {e}")
     raise
@@ -64,7 +56,6 @@ except Exception as e:
 
 @app.route("/search", methods=["POST"])
 def search_endpoint():
-    """Search endpoint"""
     try:
         data = request.get_json(force=True)
 
@@ -75,27 +66,27 @@ def search_endpoint():
         top_n = int(data.get("top_n", 3))
 
         # Validate top_n
-        if top_n < 1 or top_n > len(providers):
-            return (
-                jsonify({"error": f"top_n must be between 1 and {len(providers)}"}),
-                400,
-            )
+        if top_n < 1:
+            return jsonify({"error": "top_n must be at least 1"}), 400
 
         # Generate query embedding
         query_embedding = model.encode([query])
 
-        # Calculate similarities
-        similarities = cosine_similarity(query_embedding, embeddings)[0]
-        top_indices = np.argsort(similarities)[::-1][:top_n]
+        # Search in Qdrant
+        search_result = client.search(
+            collection_name=COLLECTION_NAME,
+            query_vector=query_embedding[0],
+            limit=top_n,
+        )
 
         # Format results
         results = []
-        for i in top_indices:
+        for hit in search_result:
             results.append(
                 {
-                    "provider": providers[i]["Provider"],
-                    "services": providers[i]["Services"],
-                    "similarity_score": float(similarities[i]),
+                    "provider": hit.payload["Provider"],
+                    "services": hit.payload["Services"],
+                    "similarity_score": float(hit.score),
                 }
             )
 

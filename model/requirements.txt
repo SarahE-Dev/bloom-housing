@@ -10,3 +10,6 @@ pytest
 matplotlib
 seaborn
 shap
+qdrant-client
+sentence-transformers
+fastembed
