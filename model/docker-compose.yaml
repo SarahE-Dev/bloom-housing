@@ -3,7 +3,20 @@ services:
     build: ./app
     ports:
       - "5000:5000" # Expose port 5000 on host and container
+    
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333" # Expose port 6333 on host and container
+      - "6334:6334" # Expose port 6334 on host and container
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+
   semantic-search:
     build: ./semantic_search
+    depends_on:
+      - qdrant
     ports:
       - "5001:5001"
+    environment:
+      - QDRANT_HOST=qdrant
